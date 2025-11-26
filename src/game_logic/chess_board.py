@@ -20,8 +20,11 @@ class Board :
         self.explored_history = {}
 
     
-    def init_taken_squared() :
-        board = [[None for i in range(8)] * 8]
+    def init_taken_squared(self) :
+        for r in range(8) :
+            for c in range(8) :
+        pass
+
         
 
     def add_piece(current_piece) :
@@ -32,7 +35,7 @@ class Board :
 
 
     def init_board() :
-        board = [[None for i in range(8)] * 8]
+        board = [[None for _ in range(8)] * 8]
         
         ### Init white pieces
         #init pawn
