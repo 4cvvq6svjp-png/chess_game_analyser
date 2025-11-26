@@ -4,7 +4,7 @@ class Piece(ABC):
     def _is_valid_move():
         pass
 
-    def _execute_move() :
+    def _execute_move():
         pass
 
         
