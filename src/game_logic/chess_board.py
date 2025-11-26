@@ -5,7 +5,7 @@ class Board :
         # how move history will be stored
         self.play_stack = []
         self.taken_squared = self.init_taken_squared()
-        # TODO - history of moves when going through the different 
+        # TODO - history of moves when going through the different variations
         self.explored_history = {}
 
     
