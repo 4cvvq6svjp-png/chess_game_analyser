@@ -22,7 +22,7 @@ class Board :
     
     def init_taken_squared(self) :
         # for each square the first nb counts the takes from the white and the second from the black
-        take_board = [[[0,0] for _ in range(8)] * 8]
+        take_board = [[{"w":0, "b":1} for _ in range(8)] * 8]
 
         for r in range(8) :
             for c in range(8) :

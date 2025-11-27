@@ -10,8 +10,8 @@ class Bishop (Piece):
     def _execute_move():
         pass
 
-    def _add_piece(self):
+    def _add_piece(self, take_board, r, c):
         pass
 
-    def _remove_piece(self):
+    def _remove_piece(self, take_board, r, c):
         pass
