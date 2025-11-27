@@ -21,17 +21,13 @@ class Board :
 
     
     def init_taken_squared(self) :
+        # for each square the first nb counts the takes from the white and the second from the black
+        take_board = [[[0,0] for _ in range(8)] * 8]
+
         for r in range(8) :
             for c in range(8) :
-        pass
-
-        
-
-    def add_piece(current_piece) :
-        pass
-
-    def remove_piece(current_piece):
-        pass
+                if self.board is not None:
+                    self.board[r][c]._add_piece(take_board, r, c)
 
 
     def init_board() :

@@ -7,10 +7,13 @@ class Piece(ABC):
     def _is_valid_move(self, square_from, square_to):
         pass
 
-    def _is_taken(self):
+    def _execute_move(self):
         pass
 
-    def _execute_move():
+    def _add_piece(self, board, r, c):
+        pass
+
+    def _remove_piece(self, board, r, c):
         pass
 
         
