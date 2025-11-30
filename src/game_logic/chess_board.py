@@ -14,7 +14,7 @@ class Board :
     def __init__(self):
         # how move history will be stored
         self.play_stack = []
-        self.board = self.init_board()
+        self.chessboard = self.init_board()
         self.taken_squared = self.init_taken_squared()
         # TODO - history of moves when going through the different variations
         self.explored_history = {}
@@ -26,8 +26,8 @@ class Board :
 
         for r in range(8) :
             for c in range(8) :
-                if self.board is not None:
-                    self.board[r][c]._add_piece(take_board, r, c)
+                if self.chessboard is not None:
+                    self.chessboard[r][c]._add_piece(take_board, r, c)
 
 
     def init_board() :

@@ -7,11 +7,12 @@ class Pawn (Piece) :
 
     def __init__(self, color) :
         super.__init__(color)
+        self.name = "pawn"
 
-    def _is_valid_move(square_from: tuple, square_to: tuple):
+    def _is_valid_move(self, square_from: tuple, square_to: tuple):
         pass
 
-    def _execute_move(square_from: tuple, square_to: tuple):
+    def _execute_move(self, square_from: tuple, square_to: tuple):
         pass
 
     def _move_piece(self, BOARD, take_board, square, add_or_remove):

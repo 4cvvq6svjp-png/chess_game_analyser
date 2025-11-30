@@ -9,10 +9,13 @@ from pieces import Piece
 
 class chess_game():
     def __init__(self):
-        self.board = Board()
+        self.playground = Board()
         self.turn = 0
         self.game_is_live = True
         self.players = [Player("w"), Player("b")]
+        # let's see if i continue with this ? 
+        self.is_in_check = False
+        self.checkmate = False
 
 
     def _is_white_turn(self) :
@@ -36,8 +39,8 @@ class chess_game():
 
         # check if the Piece exist at the staring square and if it ahs the right color
         if self.board[row][col] is not None:
-            if (self._is_white_turn() and self.board[row][col].color  == "w") or\
-                (not self._is_white_turn() and self.board[row][col].color  == "b"):
+            if (self._is_white_turn() and self.playground.chessboard[row][col].color  == "w") or\
+                (not self._is_white_turn() and self.playground.chessboard[row][col].color  == "b"):
                 return True
         return False
     
@@ -61,8 +64,23 @@ class chess_game():
                 print("Your starting square is empty")
                 print("PLease try anoter input")
                 continue
+
+            # check if the move is possible according to the piece chosen and the current state of the board
+            moving_piece = self.board.chessboard[square_from[0], square_from[1]]
+            if moving_piece._is_valid_move(square_from, square_to) :
+                # is the landing square taken ? 
+                if self.board.chessboard[square_to[0], square_to[1]] is not None:
+                    piece_to_remove = self.board.chessboard[square_to[0], square_to[1]]
+                    # is it a King ? 
+                    piece_to_remove
+
+
+                    
+                    piece_to_remove._move_piece(self.board, self.t)
+
+                moving_piece.execute_move()
             
-            
+
 
 
             
