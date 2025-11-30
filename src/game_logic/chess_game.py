@@ -8,14 +8,16 @@ from pieces import Piece
 
 
 class chess_game():
+    COLOR = ["w", "b"]
+
+
     def __init__(self):
         self.playground = Board()
         self.turn = 0
         self.game_is_live = True
         self.players = [Player("w"), Player("b")]
         # let's see if i continue with this ? 
-        self.is_in_check = False
-        self.checkmate = False
+        self.check = False
 
 
     def _is_white_turn(self) :
@@ -43,7 +45,19 @@ class chess_game():
                 (not self._is_white_turn() and self.playground.chessboard[row][col].color  == "b"):
                 return True
         return False
-    
+
+    # check/checkmate mechanism -- does it belong here ? TODO
+    ## surtout comment je vais faire pour valider un move après un check? -- _is_valid_move() à modif ? 
+    ## 
+    def _is_it_checkmate(self):
+        pass
+    def is_in_check(self, color) : #check the oppostire color from the precedent move
+        pass
+
+
+    # pat : no move left/3 move repetition to be implemented
+    # TODO 
+
 
     def launch_game(self) :
         while self.game_is_live :
@@ -68,17 +82,32 @@ class chess_game():
             # check if the move is possible according to the piece chosen and the current state of the board
             moving_piece = self.board.chessboard[square_from[0], square_from[1]]
             if moving_piece._is_valid_move(square_from, square_to) :
-                # is the landing square taken ? 
+                # is the landing square taken ? -- cannot be a king because the check trigger would be triggered
                 if self.board.chessboard[square_to[0], square_to[1]] is not None:
                     piece_to_remove = self.board.chessboard[square_to[0], square_to[1]]
-                    # is it a King ? 
-                    piece_to_remove
+                    piece_to_remove._move_piece(self.playground.chessboard, self.playground.taken_squared, square_from, "remove")
+                
+                # then execute the move
+                moving_piece.execute_move(square_from, square_to)
+                self.turn += 1
+
+            # TODO - designing how the check/checkmate mechanism would work
+            if self.is_in_check(self.COLOR[(self.turn+1)%2]) :
+                self.check = True
+                if self.is_it_checkmate():
+                    self.game_is_live = False
+
+        ## Réalisation : à chaque move il faut rouver un moyen de vérifier quelles cases ne sont plus prise via "blocage"
+        ## ie : un pion devant un fou ? 
+        ## idée - > à chaque move, vérifier la square from et le square to en diagonale, en ligne et en L pour changer le taken_board
+        ## surtout il faut que je regarde ce qui est le plus pratique entre regarder uniquement les check et checkmate à chaque tour 
+        ## et faire un calcul de "blocage" ou de "take" pour voir si c'est un checkmate ? 
+        ## TRES porbablement mieux que mon idée de "taken_board"
 
 
-                    
-                    piece_to_remove._move_piece(self.board, self.t)
 
-                moving_piece.execute_move()
+        print(f"The player : {curr_player} won.")
+                
             
 
 
