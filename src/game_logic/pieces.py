@@ -1,8 +1,8 @@
 from abc import ABC
 
 class Piece(ABC):
-    def __init__(self, couleur) :
-        self.couleur = couleur
+    def __init__(self, color) :
+        self.coler = color
 
     def _is_valid_move(self, square_from, square_to):
         pass

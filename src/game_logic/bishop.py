@@ -1,8 +1,8 @@
 from pieces import Piece
 
 class Bishop (Piece):
-    def __init__(self, couleur) :
-        super.__init__(couleur)
+    def __init__(self, color) :
+        super.__init__(color)
 
     def _is_valid_move(square_from, square_to):
         pass
