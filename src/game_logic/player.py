@@ -9,5 +9,5 @@ class Player :
     
 
     def tell_a_move(self) :
-        move = input(f"{self.COLOR[self.color]} to play (ex: 'a1a3') : ")
+        move = input(f"{self.COLOR[self.color]} to play (ex: 'a1/a3') : ")
         return move

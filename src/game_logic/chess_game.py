@@ -31,10 +31,10 @@ class chess_game ():
         return self.turn[0] == self.turn[1] 
 
 
-    def coordinate(move) :
+    def coordinate(self, move) :
         start, end = move.strip().split('/')
         # we assume that both are of length 2, and return the coordinates as tuples
-        return (start[1], ord("a") - ord(start[0])) , (ord("a") - ord(end[0]), end[1])
+        return (8 - (start[1]), ord("a") - ord(start[0])) , (8 - int(end[1]), ord("a") - ord(end[0]))
 
     # to tell if a move is possible before checking the trajectory, we check if the starting square has a piece or not
     # then if it is of the right color and if the rows ans cols ranges are right.
@@ -47,7 +47,7 @@ class chess_game ():
             return False
 
         # check if the Piece exist at the staring square and if it ahs the right color
-        if self.board[row][col] is not None:
+        if self.playground.chessboard[row][col] is not None:
             if (self._is_white_turn() and self.playground.chessboard[row][col].color  == "w") or\
                 (not self._is_white_turn() and self.playground.chessboard[row][col].color  == "b"):
                 return True
@@ -74,10 +74,14 @@ class chess_game ():
                 continue
             
             # check if it points to a Piece
-            if not self._could_be_a_move(square_from) :
-                print("Your starting square is empty")
-                print("PLease try anoter input")
-                continue
+            try:
+                if not self._could_be_a_move(square_from, square_to) :
+                    print("Your starting square is empty")
+                    print("PLease try anoter input")
+                    continue
+            except Exception:
+                print("Not a valid Move")
+                print("Please rewrite your move")
 
             # check if the move is possible according to the piece chosen and the current state of the board
             moving_piece = self.playground.chessboard[square_from[0], square_from[1]]
