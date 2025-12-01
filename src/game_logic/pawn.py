@@ -6,7 +6,7 @@ class Pawn (Piece) :
     MOVE = {"add" : 1, "remove" : -1}
 
     def __init__(self, color) :
-        super.__init__(color, "pawn")
+        super().__init__(color, "pawn")
 
     def _is_valid_move(self, square_from: tuple, square_to: tuple):
         pass

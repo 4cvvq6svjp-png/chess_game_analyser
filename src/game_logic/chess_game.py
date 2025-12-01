@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 
-class chess_game():
+class chess_game ():
     COLOR = ["w", "b"]
 
 
@@ -54,14 +54,14 @@ class chess_game():
         return False
 
 
-    # pat : no move left/3 move repetition to be implemented
-    # TODO 
-
-
     def launch_game(self) :
-        
+
         while self.game_is_live :
             curr_player = self.players[self.turn%2]
+
+            # Display 
+            self.playground.chessboard.display_board()
+
             # ask for a move
             move = curr_player.tell_a_move()
 

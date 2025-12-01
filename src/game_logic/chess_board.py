@@ -33,8 +33,25 @@ class Board :
         pass
 
 
-    def init_board() -> list[list['Piece']] :
-        board = [[None for _ in range(8)] * 8]
+    # pat : no move left/3 move repetition to be implemented
+    # TODO 
+
+
+    
+    # to display the board in the Terminal 
+    def display_board(self):
+        for row in range(8) :
+            line = []
+            for col in range(8) :
+                if self.chessboard[row][col] is not None:
+                    p = self.chessboard[row][col]
+                    name = p.name[0].upper() if p.color == "w" else p.name[0]
+                    line.append(name)
+                    line.append("|")
+                print("  ".join(line))
+
+    def init_board(self) -> list[list['Piece']] :
+        board = [[None for _ in range(8)]]*8
         
         ### Init white pieces
         #init pawn
