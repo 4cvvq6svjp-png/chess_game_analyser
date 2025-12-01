@@ -8,6 +8,11 @@ from queen import Queen
 from king import King
 from pawn import Pawn 
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .pieces import Piece
+
 
 
 class Board :
