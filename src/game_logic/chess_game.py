@@ -60,7 +60,7 @@ class chess_game ():
             curr_player = self.players[self.turn%2]
 
             # Display 
-            self.playground.chessboard.display_board()
+            self.playground.display_board()
 
             # ask for a move
             move = curr_player.tell_a_move()

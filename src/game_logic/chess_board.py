@@ -41,20 +41,24 @@ class Board :
     # to display the board in the Terminal 
     def display_board(self):
         for row in range(8) :
-            line = []
+            line = ["|"]
             for col in range(8) :
                 if self.chessboard[row][col] is not None:
                     p = self.chessboard[row][col]
                     name = p.name[0].upper() if p.color == "w" else p.name[0]
                     line.append(name)
                     line.append("|")
-                print("  ".join(line))
+                else:
+                    line.append(" ")
+            print("  ".join(line))
+            print()
 
-    def init_board(self) -> list[list['Piece']] :
-        board = [[None for _ in range(8)]]*8
-        
+
+    def init_board(self) :
+        board = [[None for _ in range(8)] for _ in range(8)]
+
         ### Init white pieces
-        #init pawn
+        #init pawns
         for i in range(8) :
             board[6][i] = Pawn("w")
 
@@ -75,22 +79,23 @@ class Board :
         board[7][3] = Queen("w")
 
         ### Init Black pieces
-        #init pawn
+        #init pawns
         for i in range(8) :
             board[1][i] = Pawn("b")
 
         #init rooks
-        board[2][7] = Rook("b")
-        board[2][0] = Rook("b")
+        board[0][7] = Rook("b")
+        board[0][0] = Rook("b")
 
         #init knights
-        board[2][6] = Knight("b")
-        board[2][1] = Knight("b")
+        board[0][6] = Knight("b")
+        board[0][1] = Knight("b")
 
         #init bishops
-        board[2][5] = Bishop("b")
-        board[2][2] = Bishop("b")
-        
+        board[0][5] = Bishop("b")
+        board[0][2] = Bishop("b")
+    
         #init Queen and king
-        board[2][4] = King("b")
-        board[2][3] = Queen("b")
+        board[0][4] = King("b")
+        board[0][3] = Queen("b")
+        return board
