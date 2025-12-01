@@ -20,19 +20,8 @@ class Board :
         # how move history will be stored
         self.play_stack = []
         self.chessboard = self.init_board()
-        self.taken_squared = self.init_taken_squared()
         # TODO - history of moves when going through the different variations
         self.explored_history = {}
-
-    
-    def init_taken_squared(self) :
-        # for each square the first nb counts the takes from the white and the second from the black
-        take_board = [[{"w":0, "b":1} for _ in range(8)] * 8]
-
-        for r in range(8) :
-            for c in range(8) :
-                if self.chessboard is not None:
-                    self.chessboard[r][c]._add_piece(take_board, r, c)
 
 
     def init_board() :

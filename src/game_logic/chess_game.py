@@ -58,7 +58,7 @@ class chess_game():
     ## 
     def _is_it_checkmate(self):
         pass
-    def is_in_check(self, color) : #check the oppostire color from the precedent move
+    def is_in_check(self, color_of_king) : #check the oppostire color from the precedent move
         pass
 
 
@@ -92,10 +92,10 @@ class chess_game():
                 # is the landing square taken ? -- cannot be a king because the check trigger would be triggered
                 if self.board.chessboard[square_to[0], square_to[1]] is not None:
                     piece_to_remove = self.board.chessboard[square_to[0], square_to[1]]
-                    piece_to_remove._move_piece(self.playground.chessboard, self.playground.taken_squared, square_from, "remove")
+                    piece_to_remove._move_piece(self.playground.chessboard, square_from, "remove")
                 
                 # then execute the move
-                moving_piece.execute_move(square_from, square_to)
+                moving_piece.execute_move(self.playground.chessboard, square_from, square_to)
                 self.turn += 1
 
             # TODO - designing how the check/checkmate mechanism would work
@@ -104,13 +104,12 @@ class chess_game():
                 if self.is_it_checkmate():
                     self.game_is_live = False
 
-        ## Réalisation : à chaque move il faut rouver un moyen de vérifier quelles cases ne sont plus prise via "blocage"
+        ## Réalisation : à chaque move il faut trouver un moyen de vérifier quelles cases ne sont plus prise via "blocage"
         ## ie : un pion devant un fou ? 
         ## idée - > à chaque move, vérifier la square from et le square to en diagonale, en ligne et en L pour changer le taken_board
         ## surtout il faut que je regarde ce qui est le plus pratique entre regarder uniquement les check et checkmate à chaque tour 
         ## et faire un calcul de "blocage" ou de "take" pour voir si c'est un checkmate ? 
         ## TRES porbablement mieux que mon idée de "taken_board"
-
 
 
         print(f"The player : {curr_player} won.")
