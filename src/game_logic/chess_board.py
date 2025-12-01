@@ -26,10 +26,10 @@ class Board :
     # check/checkmate mechanism -- does it belong here ? TODO
     ## surtout comment je vais faire pour valider un move après un check? -- _is_valid_move() à modif ? 
     ## 
-    def _is_it_checkmate(self):
+    def is_it_checkmate(BOARD, color_of_king):
         pass
 
-    def is_in_check(self, color_of_king) : #check the oppostire color from the precedent move
+    def is_in_check(BOARD, color_of_king) : #check the oppostire color from the precedent move
         pass
 
 
