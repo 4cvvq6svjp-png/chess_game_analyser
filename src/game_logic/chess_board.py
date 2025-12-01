@@ -19,12 +19,21 @@ class Board :
     def __init__(self):
         # how move history will be stored
         self.play_stack = []
-        self.chessboard = self.init_board()
+        self.chessboard: list[list['Piece']] = self.init_board()
         # TODO - history of moves when going through the different variations
         self.explored_history = {}
 
+    # check/checkmate mechanism -- does it belong here ? TODO
+    ## surtout comment je vais faire pour valider un move après un check? -- _is_valid_move() à modif ? 
+    ## 
+    def _is_it_checkmate(self):
+        pass
 
-    def init_board() :
+    def is_in_check(self, color_of_king) : #check the oppostire color from the precedent move
+        pass
+
+
+    def init_board() -> list[list['Piece']] :
         board = [[None for _ in range(8)] * 8]
         
         ### Init white pieces

@@ -11,7 +11,7 @@ class Piece(ABC):
     def _execute_move(self):
         pass
 
-    def _move_piece(self, board, r, c):
+    def _move_piece(self, board, square, add_or_remove):
         pass
 
 
