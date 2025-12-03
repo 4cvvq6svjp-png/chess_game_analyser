@@ -39,6 +39,7 @@ class chess_game ():
     # to tell if a move is possible before checking the trajectory, we check if the starting square has a piece or not
     # then if it is of the right color and if the rows ans cols ranges are right.
     def _could_be_a_move(self, start_square, end_square):
+        if start_square == end_square : return False
         row, col = start_square # When to use coordinate function ?
         row1, col1 = end_square
 
