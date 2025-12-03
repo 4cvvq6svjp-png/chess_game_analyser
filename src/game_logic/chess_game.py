@@ -28,7 +28,7 @@ class chess_game ():
 
 
     def _is_white_turn(self) :
-        return self.turn[0] == self.turn[1] 
+        return self.turn%2 == 0
 
 
     def coordinate(self, move) :
@@ -46,7 +46,7 @@ class chess_game ():
         if not (row in range(8) and col in range(8) and row1 in range(8) and col1 in range(8)):
             return False
 
-        # check if the Piece exist at the staring square and if it ahs the right color
+        # check if the Piece exist at the starting square and if it has the right color
         if self.playground.chessboard[row][col] is not None:
             if (self._is_white_turn() and self.playground.chessboard[row][col].color  == "w") or\
                 (not self._is_white_turn() and self.playground.chessboard[row][col].color  == "b"):
@@ -89,7 +89,7 @@ class chess_game ():
 
             # TODO -- > everything is checked until here
 
-            if moving_piece._is_valid_move(square_from, square_to) :
+            if moving_piece._is_valid_move(square_from, square_to, self.playground.chessboard) :
                 # are we in check ? if yes we must see if the next move takes us out of it 
                 if self.check:
                     copy_board = self.playground.chessboard.copy()

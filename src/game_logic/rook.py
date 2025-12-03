@@ -6,5 +6,11 @@ class Rook(Piece) :
 
 
 
-    def is_vaild_move():
+    def _is_valid_move():
+        pass
+
+    def _execute_move(self):
+        pass
+
+    def _move_piece(self, board, square, add_or_remove):
         pass

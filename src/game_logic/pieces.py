@@ -1,16 +1,19 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 class Piece(ABC):
     def __init__(self, color, name) :
         self.name = name
         self.color = color
 
-    def _is_valid_move(self, square_from, square_to):
+    @abstractmethod
+    def _is_valid_move(self, square_from, square_to, BOARD):
         pass
 
+    @abstractmethod
     def _execute_move(self):
         pass
 
+    @abstractmethod
     def _move_piece(self, board, square, add_or_remove):
         pass
 
