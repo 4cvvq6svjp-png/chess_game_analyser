@@ -34,7 +34,7 @@ class chess_game ():
     def coordinate(self, move) :
         start, end = move.strip().split('/')
         # we assume that both are of length 2, and return the coordinates as tuples
-        return (8 - int(start[1]), ord(start[0]) - ord("a")) , (8 - int(end[1]), ord(end[0]) - ord("a"))
+        return (8 - int(start[1]), int(ord(start[0]) - ord("a"))) , (8 - int(end[1]), int(ord(end[0]) - ord("a")))
 
     # to tell if a move is possible before checking the trajectory, we check if the starting square has a piece or not
     # then if it is of the right color and if the rows ans cols ranges are right.

@@ -13,8 +13,6 @@ def coordinate( move) :
 
 
 
-
-
 if __name__ == "__main__" :
     #print(coordinate("e2/e4"))
     main()
