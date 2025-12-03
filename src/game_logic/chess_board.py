@@ -30,7 +30,7 @@ class Board :
         pass
 
     def is_in_check(BOARD, color_of_king) : #check the oppostire color from the precedent move
-        pass
+        return False
 
 
     # pat : no move left/3 move repetition to be implemented
@@ -50,6 +50,7 @@ class Board :
                     line.append("|")
                 else:
                     line.append(" ")
+                    line.append("|")
             print("  ".join(line))
             print()
 

@@ -100,6 +100,8 @@ class chess_game ():
                 # then execute the move - we are sure is it not in checck anymore
                 moving_piece._execute_move(self.playground.chessboard, square_from, square_to)
                 self.turn += 1
+            else:
+                print("you cannot play this move try another one.")
 
             # TODO - designing how the check/checkmate mechanism would work
             if Board.is_in_check(self.playground.chessboard, next_player_color) :

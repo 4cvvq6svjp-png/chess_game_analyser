@@ -2,28 +2,32 @@ from pieces import Piece
 
 class Pawn (Piece) :
     #usefull constant ??
-    DIRECTION = {"w": 1, "b": -1}
+    DIRECTION = {"w": -1, "b": 1}
     MOVE = {"add" : 1, "remove" : -1}
 
     def __init__(self, color) :
         super().__init__(color, "pawn")
 
+
+    def starting_rank(color) :
+        return 6 if color == "w" else 1
+
     # the pawn is the only piece that moves differently if it is a take or not
     def _is_valid_move(self, square_from: tuple, square_to: tuple, BOARD: list[list['Piece']]):
         m = self.DIRECTION[self.color]
         # is it a take ?
-        if abs(square_to[1] - square_to[1]) == 1 and square_to[0] - square_from[0] == m:
-            landing_spot = BOARD[square_to[0], square_to[1]]
+        if abs(square_to[1] - square_from[1]) == 1 and square_to[0] - square_from[0] == m:
+            landing_spot = BOARD[square_to[0]][square_to[1]]
             if landing_spot is not None and landing_spot.color != self.color:
                 return True
         
         # then it is a move forward
-        if square_from[1] == square_to[1] and square_to[0] - square_from[0] == m :
-            return True
+        if square_from[1] == square_to[1] :
+            if square_to[0] - square_from[0] == m:
+                return True
+            elif square_to[0] - square_from[0] == 2*m and square_from[0] == Pawn.starting_rank(self.color):
+                return True
         
-        # two square move ? 
-        if square_from[1] == square_to[1] and square_to[0] - square_from[0] == m*2 :
-            return True
         return False
         
 
