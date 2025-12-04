@@ -50,7 +50,13 @@ class King(Piece):
                 return False
 
         # check the knights
-        
+        horse_square = [[2,1], [2,-1], [-2,1], [-2,-1], [1,2], [-1,2], [1,-2], [-1,-2]]
+        for dr, dc in horse_square:
+            if (rowTO+dr in range(8)) and (colTO+dc in range(8)) and (BOARD[rowTO+dr][colTO+dc] is not None)\
+            and BOARD[rowTO+dr][colTO+dc].name == "knight" and BOARD[rowTO+dr][colTO+dc].color != self.color:
+                return False
+        return True
+
 
 
     def _move_piece(self, BOARD, square, add_or_remove):
