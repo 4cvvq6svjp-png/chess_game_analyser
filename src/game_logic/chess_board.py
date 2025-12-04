@@ -35,22 +35,20 @@ class Board :
         return False
 
     def is_in_check(BOARD, color_of_king) : #check the opposit color from the precedent move
-        # # find the king on the board
-        # stop = False
-        # for r in range(8) :
-        #     for c in range(8) :
-        #         if (BOARD[r][c] is not None) and (BOARD[r][c].name == "king")\
-        #             and (BOARD[r][c].color == color_of_king):
-        #             stop = True
-        #             break
-        #     if stop :
-        #         break
-        # m = Board.DIRECTION[color_of_king]
+        # find the king on the board
+        stop = False
+        for r in range(8) :
+            for c in range(8) :
+                if (BOARD[r][c] is not None) and (BOARD[r][c].name == "king")\
+                    and (BOARD[r][c].color == color_of_king):
+                    stop = True
+                    break
+            if stop :
+                break
                     
-        # return not ((MoveUtility.check_diags(BOARD, r, c, m)\
-        #             and MoveUtility.check_lines(BOARD, r, c)\
-        #             and MoveUtility.check_horses(BOARD, r, c, color_of_king)))
-        return False
+        return not ((MoveUtility.check_diags(BOARD, r, c, color_of_king)\
+                    and MoveUtility.check_lines(BOARD, r, c, color_of_king)\
+                    and MoveUtility.check_horses(BOARD, r, c, color_of_king)))
 
     # pat : no move left/3 move repetition to be implemented
     # TODO 

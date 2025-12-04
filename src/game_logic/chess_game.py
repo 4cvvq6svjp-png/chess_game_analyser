@@ -96,7 +96,7 @@ class chess_game ():
                     copy_board = self.playground.chessboard.copy()
                     moving_piece._execute_move(copy_board, square_from, square_to)
                     if Board.is_in_check(copy_board, curr_player_color) :
-                        break
+                        continue
 
                 # then execute the move - we are sure is it not in checck anymore
                 moving_piece._execute_move(self.playground.chessboard, square_from, square_to)
