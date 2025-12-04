@@ -106,6 +106,7 @@ class chess_game ():
 
             # TODO - designing how the check/checkmate mechanism would work
             if Board.is_in_check(self.playground.chessboard, next_player_color) :
+                print("CHECK!!")
                 self.check = True
                 if Board.is_it_checkmate(self.playground.chessboard, next_player_color):
                     self.game_is_live = False

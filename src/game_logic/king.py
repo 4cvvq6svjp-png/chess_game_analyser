@@ -3,7 +3,6 @@ from move_utility import MoveUtility
 
 
 class King(Piece):
-    DIRECTION = {"w": -1, "b": 1}
 
     def __init__(self, color) :
         super().__init__(color, "king")
@@ -16,9 +15,10 @@ class King(Piece):
             return False
 
         rowTO, colTO = square_to
-        m = self.DIRECTION[self.color]
 
-        return MoveUtility.check_diags(BOARD, rowTO, colTO, m) and MoveUtility.check_lines(BOARD, rowTO, colTO) and MoveUtility.check_horses(BOARD, rowTO, colTO, self.color)
+        return  MoveUtility.check_diags(BOARD, rowTO, colTO, self.color)
+            # and MoveUtility.check_lines(BOARD, rowTO, colTO, self.color)\
+            # and MoveUtility.check_horses(BOARD, rowTO, colTO, self.color)
 
 
 
