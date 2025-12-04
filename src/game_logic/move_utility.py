@@ -104,7 +104,7 @@ class MoveUtility :
         horse_square = [[2,1], [2,-1], [-2,1], [-2,-1], [1,2], [-1,2], [1,-2], [-1,-2]]
         for dr, dc in horse_square:
             if (ROW+dr in range(8)) and (COL+dc in range(8)) and (BOARD[ROW+dr][COL+dc] is not None)\
-            and BOARD[ROW+dr][COL+dc].name == "knight" and BOARD[ROW+dr][COL+dc].color != color:
+            and BOARD[ROW+dr][COL+dc].name == "horse" and BOARD[ROW+dr][COL+dc].color != color:
                 return False
         return True
 

@@ -17,8 +17,8 @@ class King(Piece):
         rowTO, colTO = square_to
 
         return  MoveUtility.check_diags(BOARD, rowTO, colTO, self.color)\
-             and MoveUtility.check_lines(BOARD, rowTO, colTO, self.color)
-            # and MoveUtility.check_horses(BOARD, rowTO, colTO, self.color)
+             and MoveUtility.check_lines(BOARD, rowTO, colTO, self.color)\
+             and MoveUtility.check_horses(BOARD, rowTO, colTO, self.color)
 
 
 
