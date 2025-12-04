@@ -5,8 +5,6 @@ class Knight (Piece) :
     def __init__(self, color) :
         super().__init__(color, "horse")
 
-
-
     
     def _is_valid_move(self, square_from: tuple, square_to: tuple, BOARD: list[list['Piece']]):
         row, col = square_from
@@ -19,7 +17,6 @@ class Knight (Piece) :
         if (BOARD[rowTO][colTO] is not None) and (BOARD[row][col].color == BOARD[rowTO][colTO].color) :
             return False
         return True
-
 
 
     def _move_piece(self, BOARD, square, add_or_remove):

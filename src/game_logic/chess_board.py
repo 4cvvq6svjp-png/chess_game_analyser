@@ -7,6 +7,9 @@ from rook import Rook
 from queen import Queen
 from king import King
 from pawn import Pawn 
+from move_utility import MoveUtility
+
+
 
 from typing import TYPE_CHECKING
 
@@ -29,7 +32,20 @@ class Board :
     def is_it_checkmate(BOARD, color_of_king):
         pass
 
-    def is_in_check(BOARD, color_of_king) : #check the oppostire color from the precedent move
+    def is_in_check(BOARD, color_of_king) : #check the opposit color from the precedent move
+        # find the king on the board
+        stop = False
+        for r in range(8) :
+            for c in range(8) :
+                if (BOARD[r][c] is not None) and (BOARD[r][c].name == "king")\
+                    and (BOARD[r][c].color == color_of_king):
+                    stop = True
+                    break
+            if stop :
+                break
+        
+        # check for the diags
+                    
         return False
 
 
