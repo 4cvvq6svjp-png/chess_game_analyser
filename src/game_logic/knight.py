@@ -18,7 +18,6 @@ class Knight (Piece) :
         # landing square has a same color piece on it
         if (BOARD[rowTO][colTO] is not None) and (BOARD[row][col].color == BOARD[rowTO][colTO].color) :
             return False
-        
         return True
 
 
