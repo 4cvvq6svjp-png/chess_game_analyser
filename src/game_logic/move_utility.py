@@ -86,13 +86,17 @@ class MoveUtility :
         for dr, dc in directions :
             row = ROW
             col = COL
-            while (row + dr in range(8)) and (col + dc in range(8))\
-            and (BOARD[row+dr][col+dc] is None):
+            while (row+dr in range(8)) and (col+dc in range(8)):
                 row += dr
                 col += dc
-            if BOARD[row][col] and (BOARD[row][col].name in ["queen", "rook"]) :
+                if BOARD[row][col] is not None :
+                    break
+            if row+dr not in range(8) or col+dc not in range(8) or not BOARD[row][col]: continue
+            if BOARD[row][col].color == color : continue
+
+            if BOARD[row][col].name in ["queen", "rook"] :
                 return False
-            elif BOARD[row][col] and (BOARD[row][col].name == "king") and (abs(row - ROW) < 1 or abs(col - COL) < 1) :
+            elif (BOARD[row][col].name == "king") and (abs(row - ROW) < 1 or abs(col - COL) < 1) :
                 return False
         return True
     

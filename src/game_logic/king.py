@@ -11,13 +11,13 @@ class King(Piece):
 
     def _is_valid_move(self, square_from: tuple, square_to: tuple, BOARD: list[list['Piece']]):
         # check the length of the move
-        if abs(square_to[0] - square_from[0]) > 1 or abs(square_to[1] - square_from[1]):
+        if abs(square_to[0] - square_from[0]) > 1 or abs(square_to[1] - square_from[1]) > 1:
             return False
 
         rowTO, colTO = square_to
 
-        return  MoveUtility.check_diags(BOARD, rowTO, colTO, self.color)
-            # and MoveUtility.check_lines(BOARD, rowTO, colTO, self.color)\
+        return  MoveUtility.check_diags(BOARD, rowTO, colTO, self.color)\
+             and MoveUtility.check_lines(BOARD, rowTO, colTO, self.color)
             # and MoveUtility.check_horses(BOARD, rowTO, colTO, self.color)
 
 
