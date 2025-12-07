@@ -91,7 +91,7 @@ class MoveUtility :
                 col += dc
                 if BOARD[row][col] is not None :
                     break
-                
+
             if BOARD[row][col] is None or BOARD[row][col].color == color: continue
 
             if BOARD[row][col].name in ["queen", "rook"] :
@@ -99,6 +99,8 @@ class MoveUtility :
             elif (BOARD[row][col].name == "king") and (abs(row - ROW) < 1 or abs(col - COL) < 1) :
                 return False
         return True
+    
+
     
     def check_horses(BOARD, ROW, COL, color) :
         horse_square = [[2,1], [2,-1], [-2,1], [-2,-1], [1,2], [-1,2], [1,-2], [-1,-2]]
