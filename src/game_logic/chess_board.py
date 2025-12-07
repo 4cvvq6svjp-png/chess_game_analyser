@@ -48,10 +48,11 @@ class Board :
         # can the king move ?
         for dr in [-1, 1]:
             for dc in [-1, 1]:
-                if r+dr in range(8) and c+dc in range(8) and king._is_valid_move((r,c), (r+dr, c+dc), BOARD_copy) :
+                if (r+dr in range(8)) and (c+dc in range(8)) and\
+                    (BOARD_copy[r+dr][c+dc] is None) and\
+                    (king._is_valid_move((r,c), (r+dr, c+dc), BOARD_copy)) :
                     return False
         
-
         row, col = attacking_piece_position
         attacker = BOARD_copy[row][col]
         # can we eat the piece ?
@@ -61,7 +62,7 @@ class Board :
             return False
 
         # if not a horse/pawn --> can we block it ?
-        
+
         return True
 
     def is_in_check(BOARD, color_of_king) : #check the opposit color from the precedent move
