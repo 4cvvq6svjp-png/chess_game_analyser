@@ -111,7 +111,8 @@ class chess_game ():
             if Board.is_in_check(self.playground.chessboard, next_player.color) :
                 print("CHECK!!")
                 self.check = True
-                if Board.is_it_checkmate(self.playground.chessboard, next_player.color):
+                copy_board_bis = deepcopy(self.playground.chessboard)
+                if Board.is_it_checkmate(copy_board_bis, next_player.color, square_to):
                     self.game_is_live = False
 
 

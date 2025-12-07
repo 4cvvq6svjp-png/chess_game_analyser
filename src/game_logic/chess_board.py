@@ -29,10 +29,40 @@ class Board :
         self.explored_history = {}
 
     # check/checkmate mechanism -- does it belong here ? TODO
-    ## surtout comment je vais faire pour valider un move après un check? -- _is_valid_move() à modif ? 
-    ## 
-    def is_it_checkmate(BOARD, color_of_king):
-        return False
+
+
+    def is_it_checkmate(BOARD_copy, color_of_king, attacking_piece_position):
+        ## idée : je fais is_valid_move() sur tout les moves de rois possibles afin de voir s'il en existe un de bon
+        # find the king on the board
+        stop = False
+        for r in range(8) :
+            for c in range(8) :
+                if (BOARD_copy[r][c] is not None) and (BOARD_copy[r][c].name == "king")\
+                    and (BOARD_copy[r][c].color == color_of_king):
+                    stop = True
+                    break
+            if stop :
+                break
+        king = BOARD_copy[r][c]
+        
+        # can the king move ?
+        for dr in [-1, 1]:
+            for dc in [-1, 1]:
+                if r+dr in range(8) and c+dc in range(8) and king._is_valid_move((r,c), (r+dr, c+dc), BOARD_copy) :
+                    return False
+        
+
+        row, col = attacking_piece_position
+        attacker = BOARD_copy[row][col]
+        # can we eat the piece ?
+        if not (MoveUtility.check_diags(BOARD_copy, row, col, attacker.color)\
+                and MoveUtility.check_lines(BOARD_copy, row, col, attacker.color)\
+                and MoveUtility.check_horses(BOARD_copy, row, col, attacker.color)):
+            return False
+
+        # if not a horse/pawn --> can we block it ?
+        
+        return True
 
     def is_in_check(BOARD, color_of_king) : #check the opposit color from the precedent move
         # find the king on the board
