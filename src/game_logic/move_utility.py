@@ -67,14 +67,14 @@ class MoveUtility :
                 col += dc
                 if BOARD[row][col] is not None :
                     break
-            if row+dr not in range(8) or col+dc not in range(8) or not BOARD[row][col]: continue
-            if BOARD[row][col].color == color : continue
+
+            if BOARD[row][col] is None or BOARD[row][col].color == color: continue
 
             if BOARD[row][col].name in ["queen", "bishop"]:
                 return False
             elif (BOARD[row][col].name == "king") and (abs(row - ROW) < 1 or abs(col - COL) < 1) :
                 return False
-            ## à verif, c'est la logique derrière une échec fait par un pion
+            ## à verif, c'est la logique derrière un échec fait par un pion
             elif (BOARD[row][col].name == "pawn") and (row - ROW == m) :
                 return False
         return True
@@ -91,8 +91,8 @@ class MoveUtility :
                 col += dc
                 if BOARD[row][col] is not None :
                     break
-            if row+dr not in range(8) or col+dc not in range(8) or not BOARD[row][col]: continue
-            if BOARD[row][col].color == color : continue
+                
+            if BOARD[row][col] is None or BOARD[row][col].color == color: continue
 
             if BOARD[row][col].name in ["queen", "rook"] :
                 return False
