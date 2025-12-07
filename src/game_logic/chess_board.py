@@ -45,9 +45,6 @@ class Board :
                     break
             if stop :
                 break
-        # print(MoveUtility.check_diags(BOARD, r, c, color_of_king))
-        # print(MoveUtility.check_lines(BOARD, r, c, color_of_king))
-        # print(MoveUtility.check_horses(BOARD, r, c, color_of_king))
 
         return not (MoveUtility.check_diags(BOARD, r, c, color_of_king)\
                 and MoveUtility.check_lines(BOARD, r, c, color_of_king)\

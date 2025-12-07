@@ -6,6 +6,8 @@ from pieces import Piece
 # a move will be a input like this : "a1/a2", we check if the color id right with the number of turn 
 # it will be parsed and transformed to be 2 tuples, a start_square and an end_square
 from typing import TYPE_CHECKING
+from copy import deepcopy
+
 
 if TYPE_CHECKING:
     from .pieces import Piece
@@ -58,14 +60,14 @@ class chess_game ():
     def launch_game(self) :
 
         while self.game_is_live :
-            curr_player_color = self.players[self.turn%2]
-            next_player_color = self.COLOR[(self.turn+1)%2]
+            curr_player = self.players[self.turn%2]
+            next_player = self.players[(self.turn+1)%2]
 
             # Display 
             self.playground.display_board()
 
             # ask for a move
-            move = curr_player_color.tell_a_move()
+            move = curr_player.tell_a_move()
 
             # try parsing
             try: 
@@ -93,28 +95,29 @@ class chess_game ():
             if moving_piece._is_valid_move(square_from, square_to, self.playground.chessboard) :
                 # are we in check ? if yes we must see if the next move takes us out of it 
                 if self.check:
-                    copy_board = self.playground.chessboard.copy()
+                    copy_board = deepcopy(self.playground.chessboard)
                     moving_piece._execute_move(copy_board, square_from, square_to)
-                    if Board.is_in_check(copy_board, curr_player_color) :
+                    if Board.is_in_check(copy_board, curr_player.color) :
+                        print("You are still in CHECK!")
                         continue
 
-                # then execute the move - we are sure is it not in checck anymore
+                # then execute the move - we are sure is it not in check anymore
                 moving_piece._execute_move(self.playground.chessboard, square_from, square_to)
                 self.turn += 1
             else:
                 print("you cannot play this move try another one.")
 
             # TODO - designing how the check/checkmate mechanism would work
-            if Board.is_in_check(self.playground.chessboard, next_player_color) :
+            if Board.is_in_check(self.playground.chessboard, next_player.color) :
                 print("CHECK!!")
                 self.check = True
-                if Board.is_it_checkmate(self.playground.chessboard, next_player_color):
+                if Board.is_it_checkmate(self.playground.chessboard, next_player.color):
                     self.game_is_live = False
 
 
 
 
-        print(f"The player : {curr_player_color} won.")
+        print(f"The player : {curr_player.color} won.")
                 
             
 
