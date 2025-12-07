@@ -28,11 +28,10 @@ class Board :
         # TODO - history of moves when going through the different variations
         self.explored_history = {}
 
-    # check/checkmate mechanism -- does it belong here ? TODO
+    # check/checkmate mechanism TODO
 
 
     def is_it_checkmate(BOARD_copy, color_of_king, attacking_piece_position):
-        ## idée : je fais is_valid_move() sur tout les moves de rois possibles afin de voir s'il en existe un de bon
         # find the king on the board
         stop = False
         for r in range(8) :
@@ -44,6 +43,10 @@ class Board :
             if stop :
                 break
         king = BOARD_copy[r][c]
+
+        # find the attacker -- or give it as an input
+
+
         
         # can the king move ?
         for dr in [-1, 1]:
@@ -54,9 +57,10 @@ class Board :
                     return False
         
         row, col = attacking_piece_position
-        attacker = BOARD_copy[row][col]
+        attacker = BOARD_copy[row][col] ## WRONG -- faux lors d'attaques à la découverte
+
         # can we eat the piece ?
-        if not (MoveUtility.check_diags(BOARD_copy, row, col, attacker.color)\
+        if  not    (MoveUtility.check_diags(BOARD_copy, row, col, attacker.color)\
                 and MoveUtility.check_lines(BOARD_copy, row, col, attacker.color)\
                 and MoveUtility.check_horses(BOARD_copy, row, col, attacker.color)):
             return False
@@ -65,8 +69,10 @@ class Board :
 
         return True
 
-    def is_in_check(BOARD, color_of_king) : #check the opposit color from the precedent move
-        # find the king on the board
+
+
+    def is_in_check(BOARD, color_of_king) :
+        """Verify if there is a check on the board"""
         stop = False
         for r in range(8) :
             for c in range(8) :
@@ -76,10 +82,21 @@ class Board :
                     break
             if stop :
                 break
+        # let's locate the checks
+        possible_check = [MoveUtility.check_diags(BOARD, r, c, color_of_king),
+                          MoveUtility.check_lines(BOARD, r, c, color_of_king),
+                          MoveUtility.check_horses(BOARD, r, c, color_of_king)]
+        trues = possible_check.count(True)
+        if trues == 3 :
+            return False, (0,0)
+        elif trues <= 1 :
+            return True, (-1,-1)
+        
+        if not possible_check[0] :
+            return True, ()
 
-        return not (MoveUtility.check_diags(BOARD, r, c, color_of_king)\
-                and MoveUtility.check_lines(BOARD, r, c, color_of_king)\
-                and MoveUtility.check_horses(BOARD, r, c, color_of_king))
+        
+
 
 
     # pat : no move left/3 move repetition to be implemented
@@ -87,8 +104,9 @@ class Board :
 
 
     
-    # to display the board in the Terminal 
+    
     def display_board(self):
+        """To display the board in the terminal"""
         for row in range(8) :
             line = ["|"]
             for col in range(8) :
@@ -105,6 +123,7 @@ class Board :
 
 
     def init_board(self) :
+        """To initialize the chessboard"""
         board = [[None for _ in range(8)] for _ in range(8)]
 
         ### Init white pieces
