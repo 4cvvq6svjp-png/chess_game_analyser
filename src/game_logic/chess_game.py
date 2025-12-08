@@ -108,12 +108,13 @@ class chess_game ():
                 print("you cannot play this move try another one.")
 
             # TODO - designing how the check/checkmate mechanism would work
-            if Board.is_in_check(self.playground.chessboard, next_player.color) :
+            ischeck = Board.is_in_check(self.playground.chessboard, next_player.color)
+            if ischeck["check"] :
                 print("CHECK!!")
                 self.check = True
                 copy_board_bis = deepcopy(self.playground.chessboard)
-                print(f"checkmate ? --> {Board.is_it_checkmate(copy_board_bis, next_player.color, square_to)}")
-                if Board.is_it_checkmate(copy_board_bis, next_player.color, square_to):
+                #print(f"checkmate ? --> {Board.is_it_checkmate(copy_board_bis, next_player.color, ischeck["square_attacker"], )}")
+                if Board.is_it_checkmate(copy_board_bis, next_player.color, ischeck["square_attacker"], ischeck["double_check"]):
                     self.game_is_live = False
 
 

@@ -100,7 +100,7 @@ class Board :
         checkS = [MoveUtility.check_diags(BOARD, r, c, color_of_king),
                   MoveUtility.check_lines(BOARD, r, c, color_of_king),
                   MoveUtility.check_horses(BOARD, r, c, color_of_king)]
-        possible_check = [elt[0] for elt in checkS]
+        possible_check = [elt["check"] for elt in checkS]
 
         trues = possible_check.count(True)
         if trues == 3 :
@@ -109,11 +109,11 @@ class Board :
             return {"check":True, "double_check":True, "square_attacker":(-1,-1)}
         
         if not possible_check[0] :
-            return {"check":True, "double_check":False, "square_attacker":checkS["attacker"]}
+            return {"check":True, "double_check":False, "square_attacker":checkS[0]["square_attacker"]}
         elif not possible_check[1] :
-            return {"check":True, "double_check":False, "square_attacker":checkS["attacker"]}
+            return {"check":True, "double_check":False, "square_attacker":checkS[1]["square_attacker"]}
         else:
-            return {"check":True, "double_check":False, "square_attacker":checkS["attacker"]}
+            return {"check":True, "double_check":False, "square_attacker":checkS[2]["square_attacker"]}
 
         
 
