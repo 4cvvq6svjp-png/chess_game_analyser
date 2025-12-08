@@ -71,13 +71,13 @@ class MoveUtility :
             if BOARD[row][col] is None or BOARD[row][col].color == color: continue
 
             if BOARD[row][col].name in ["queen", "bishop"]:
-                return False
+                return {"check":False, "square_attacker":(row,col)}
             elif (BOARD[row][col].name == "king") and (abs(row - ROW) < 1 or abs(col - COL) < 1) :
-                return False
+                return {"check":False, "square_attacker":(row,col)}
             ## à verif, c'est la logique derrière un échec fait par un pion
             elif (BOARD[row][col].name == "pawn") and (row - ROW == m) :
-                return False
-        return True
+                return {"check":False, "square_attacker":(row,col)}
+        return {"check":True, "square_attacker":(-1, -1)}
     
 
     def check_lines(BOARD, ROW, COL, color) :
@@ -95,10 +95,10 @@ class MoveUtility :
             if BOARD[row][col] is None or BOARD[row][col].color == color: continue
 
             if BOARD[row][col].name in ["queen", "rook"] :
-                return False
+                return {"check":False, "square_attacker":(row,col)}
             elif (BOARD[row][col].name == "king") and (abs(row - ROW) < 1 or abs(col - COL) < 1) :
-                return False
-        return True
+                return {"check":False, "square_attacker":(row,col)}
+        return {"check":True, "square_attacker":(-1,-1)}
     
 
     
@@ -107,8 +107,8 @@ class MoveUtility :
         for dr, dc in horse_square:
             if (ROW+dr in range(8)) and (COL+dc in range(8)) and (BOARD[ROW+dr][COL+dc] is not None)\
             and BOARD[ROW+dr][COL+dc].name == "horse" and BOARD[ROW+dr][COL+dc].color != color:
-                return False
-        return True
+                return {"check":False, "square_attacker":(ROW+dr,COL+dc)}
+        return {"check":True, "square_attacker":(-1,-1)}
 
 
 

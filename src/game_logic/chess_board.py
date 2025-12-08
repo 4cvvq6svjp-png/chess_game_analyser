@@ -31,7 +31,7 @@ class Board :
     # check/checkmate mechanism TODO
 
 
-    def is_it_checkmate(BOARD_copy, color_of_king, attacking_piece_position):
+    def is_it_checkmate(BOARD_copy, color_of_king, attacking_piece_position, double_check):
         # find the king on the board
         stop = False
         for r in range(8) :
@@ -43,10 +43,6 @@ class Board :
             if stop :
                 break
         king = BOARD_copy[r][c]
-
-        # find the attacker -- or give it as an input
-
-
         
         # can the king move ?
         for dr in [-1, 1]:
@@ -57,15 +53,21 @@ class Board :
                     return False
         
         row, col = attacking_piece_position
-        attacker = BOARD_copy[row][col] ## WRONG -- faux lors d'attaques à la découverte
+        attacker = BOARD_copy[row][col]
 
-        # can we eat the piece ?
-        if  not    (MoveUtility.check_diags(BOARD_copy, row, col, attacker.color)\
-                and MoveUtility.check_lines(BOARD_copy, row, col, attacker.color)\
-                and MoveUtility.check_horses(BOARD_copy, row, col, attacker.color)):
+        # If the attack is double then it is a mate
+        if double_check:
+            return True
+
+        # can we eat the piece ? -- the trick is to use these function to see if a piece could be eaten or not, 
+        # this is equivalent to 
+        if    not  (MoveUtility.check_diags(BOARD_copy, row, col, attacker.color)["check"]\
+                and MoveUtility.check_lines(BOARD_copy, row, col, attacker.color)["check"]\
+                and MoveUtility.check_horses(BOARD_copy, row, col, attacker.color)["check"]):
             return False
 
         # if not a horse/pawn --> can we block it ?
+        
 
         return True
 
@@ -83,21 +85,25 @@ class Board :
             if stop :
                 break
         # let's locate the checks
-        possible_check = [MoveUtility.check_diags(BOARD, r, c, color_of_king),
-                          MoveUtility.check_lines(BOARD, r, c, color_of_king),
-                          MoveUtility.check_horses(BOARD, r, c, color_of_king)]
+        checkS = [MoveUtility.check_diags(BOARD, r, c, color_of_king),
+                  MoveUtility.check_lines(BOARD, r, c, color_of_king),
+                  MoveUtility.check_horses(BOARD, r, c, color_of_king)]
+        possible_check = [elt[0] for elt in checkS]
+
         trues = possible_check.count(True)
         if trues == 3 :
-            return False, (0,0)
+            return {"check":False, "double_check":False,"square_attacker":(-1,-1)}
         elif trues <= 1 :
-            return True, (-1,-1)
+            return {"check":True, "double_check":True, "square_attacker":(-1,-1)}
         
         if not possible_check[0] :
-            return True, ()
+            return {"check":True, "double_check":False, "square_attacker":checkS["attacker"]}
+        elif not possible_check[1] :
+            return {"check":True, "double_check":False, "square_attacker":checkS["attacker"]}
+        else:
+            return {"check":True, "double_check":False, "square_attacker":checkS["attacker"]}
 
         
-
-
 
     # pat : no move left/3 move repetition to be implemented
     # TODO 
