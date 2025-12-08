@@ -8,6 +8,7 @@ from queen import Queen
 from king import King
 from pawn import Pawn 
 from move_utility import MoveUtility
+from math import copysign
 
 
 
@@ -67,8 +68,18 @@ class Board :
             return False
 
         # if not a horse/pawn --> can we block it ?
-        
+        if attacker.name in ["horse", "pawn"] : return True
 
+        inbetween_square = []
+        while row != r or col != c :
+            row += int(copysign(1, r - row)) if r!=row else 0
+            col += int(copysign(1, c - col)) if c!=col else 0
+            inbetween_square.append((row, col))
+
+        for dr, dc in inbetween_square :
+            if not (MoveUtility.check_diags(BOARD_copy, dr, dc, attacker.color)["check"]\
+                and MoveUtility.check_lines(BOARD_copy, dr, dc, attacker.color)["check"]):
+                return False
         return True
 
 
@@ -84,6 +95,7 @@ class Board :
                     break
             if stop :
                 break
+
         # let's locate the checks
         checkS = [MoveUtility.check_diags(BOARD, r, c, color_of_king),
                   MoveUtility.check_lines(BOARD, r, c, color_of_king),
