@@ -72,7 +72,7 @@ class MoveUtility :
 
             if BOARD[row][col].name in ["queen", "bishop"]:
                 return {"check":False, "square_attacker":(row,col)}
-            elif (BOARD[row][col].name == "king") and (abs(row - ROW) < 1 or abs(col - COL) < 1) :
+            elif (BOARD[row][col].name == "king") and (abs(row - ROW) < 1 and abs(col - COL) < 1) :
                 return {"check":False, "square_attacker":(row,col)}
             ## à verif, c'est la logique derrière un échec fait par un pion
             elif (BOARD[row][col].name == "pawn") and (row - ROW == m) :
@@ -96,7 +96,8 @@ class MoveUtility :
 
             if BOARD[row][col].name in ["queen", "rook"] :
                 return {"check":False, "square_attacker":(row,col)}
-            elif (BOARD[row][col].name == "king") and (abs(row - ROW) < 1 or abs(col - COL) < 1) :
+            elif (BOARD[row][col].name == "king") and (abs(row - ROW) < 1 and abs(col - COL) < 1) :
+                print("ici")
                 return {"check":False, "square_attacker":(row,col)}
         return {"check":True, "square_attacker":(-1,-1)}
     

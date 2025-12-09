@@ -63,6 +63,9 @@ class Board :
 
         # can we eat the piece ? -- the trick is to use these function to see if a piece could be eaten or not, 
         # this is equivalent to 
+        print(MoveUtility.check_diags(BOARD_copy, row, col, attacker.color)["check"])
+        print(MoveUtility.check_lines(BOARD_copy, row, col, attacker.color)["check"])
+        print(MoveUtility.check_horses(BOARD_copy, row, col, attacker.color)["check"])
         if    not  (MoveUtility.check_diags(BOARD_copy, row, col, attacker.color)["check"]\
                 and MoveUtility.check_lines(BOARD_copy, row, col, attacker.color)["check"]\
                 and MoveUtility.check_horses(BOARD_copy, row, col, attacker.color)["check"]):
@@ -79,8 +82,9 @@ class Board :
         print(inbetween_square)
         for dr, dc in inbetween_square :
             if not (MoveUtility.check_diags(BOARD_copy, dr, dc, attacker.color)["check"]\
-                and MoveUtility.check_lines(BOARD_copy, dr, dc, attacker.color)["check"]):
-                print(f"issue here : {(dr,dc)}")
+                and MoveUtility.check_lines(BOARD_copy, dr, dc, attacker.color)["check"]
+                and MoveUtility.check_horses(BOARD_copy, dr, dc, attacker.color)["check"]):
+                print(f"we can block on this square : {(dr,dc)}")
                 return False
         return True
 
