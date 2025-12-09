@@ -119,7 +119,7 @@ class chess_game ():
 
 
 
-
+        self.playground.display_board()
         print(f"The player : {curr_player.color} won.")
                 
             

@@ -33,6 +33,7 @@ class Board :
 
 
     def is_it_checkmate(BOARD_copy, color_of_king, attacking_piece_position, double_check):
+        print("begin check for checkmate")
         # find the king on the board
         stop = False
         for r in range(8) :
@@ -55,7 +56,7 @@ class Board :
         
         row, col = attacking_piece_position
         attacker = BOARD_copy[row][col]
-
+        print("the king cannot move")
         # If the attack is double then it is a mate
         if double_check:
             return True
@@ -66,7 +67,7 @@ class Board :
                 and MoveUtility.check_lines(BOARD_copy, row, col, attacker.color)["check"]\
                 and MoveUtility.check_horses(BOARD_copy, row, col, attacker.color)["check"]):
             return False
-
+        print("we cannot eat the piece")
         # if not a horse/pawn --> can we block it ?
         if attacker.name in ["horse", "pawn"] : return True
 
@@ -102,7 +103,7 @@ class Board :
                   MoveUtility.check_lines(BOARD, r, c, color_of_king),
                   MoveUtility.check_horses(BOARD, r, c, color_of_king)]
         possible_check = [elt["check"] for elt in checkS]
-        print(possible_check)
+        
         trues = possible_check.count(True)
         if trues == 3 :
             return {"check":False, "double_check":False,"square_attacker":(-1,-1)}
