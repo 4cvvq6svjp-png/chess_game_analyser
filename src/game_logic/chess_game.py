@@ -25,8 +25,6 @@ class chess_game ():
         self.turn = 0
         self.game_is_live = True
         self.players = [Player("w"), Player("b")]
-        # let's see if i continue with this ? 
-        self.check = False
 
 
     def _is_white_turn(self) :
@@ -93,25 +91,22 @@ class chess_game ():
 
             if moving_piece._is_valid_move(square_from, square_to, self.playground.chessboard) :
                 # are we in check ? if yes we must see if the next move takes us out of it 
-                if self.check:
-                    copy_board = deepcopy(self.playground.chessboard)
-                    moving_piece._execute_move(copy_board, square_from, square_to)
-                    if Board.is_in_check(copy_board, curr_player.color)["check"] :
-                        print("You are still in CHECK!")
-                        continue
+                copy_board = deepcopy(self.playground.chessboard)
+                moving_piece._execute_move(copy_board, square_from, square_to)
+                if Board.is_in_check(copy_board, curr_player.color)["check"] :
+                    print("you must not stay or go into CHECK!")
+                    continue
                     
 
                 # then execute the move - we are sure is it not in check anymore
                 moving_piece._execute_move(self.playground.chessboard, square_from, square_to)
                 self.turn += 1
-                self.check # the current player
             else:
                 print("you cannot play this move try another one.")
 
             ischeck = Board.is_in_check(self.playground.chessboard, next_player.color)
             if ischeck["check"] :
                 print("CHECK!!")
-                self.check = True
                 copy_board_bis = deepcopy(self.playground.chessboard)
                 #print(f"checkmate ? --> {Board.is_it_checkmate(copy_board_bis, next_player.color, ischeck["square_attacker"], )}")
                 if Board.is_it_checkmate(copy_board_bis, next_player.color, ischeck["square_attacker"], ischeck["double_check"]):
