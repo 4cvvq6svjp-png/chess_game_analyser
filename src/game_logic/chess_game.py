@@ -97,7 +97,7 @@ class chess_game ():
                 if self.check:
                     copy_board = deepcopy(self.playground.chessboard)
                     moving_piece._execute_move(copy_board, square_from, square_to)
-                    if Board.is_in_check(copy_board, curr_player.color) :
+                    if Board.is_in_check(copy_board, curr_player.color)["check"] :
                         print("You are still in CHECK!")
                         continue
 

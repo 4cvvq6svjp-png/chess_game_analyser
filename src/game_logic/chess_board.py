@@ -71,14 +71,15 @@ class Board :
         if attacker.name in ["horse", "pawn"] : return True
 
         inbetween_square = []
-        while row != r or col != c :
+        while abs(row - r)>1 or abs(col - c)>1 :
             row += int(copysign(1, r - row)) if r!=row else 0
             col += int(copysign(1, c - col)) if c!=col else 0
             inbetween_square.append((row, col))
-
+        print(inbetween_square)
         for dr, dc in inbetween_square :
             if not (MoveUtility.check_diags(BOARD_copy, dr, dc, attacker.color)["check"]\
                 and MoveUtility.check_lines(BOARD_copy, dr, dc, attacker.color)["check"]):
+                print(f"issue here : {(dr,dc)}")
                 return False
         return True
 
@@ -101,7 +102,7 @@ class Board :
                   MoveUtility.check_lines(BOARD, r, c, color_of_king),
                   MoveUtility.check_horses(BOARD, r, c, color_of_king)]
         possible_check = [elt["check"] for elt in checkS]
-
+        print(possible_check)
         trues = possible_check.count(True)
         if trues == 3 :
             return {"check":False, "double_check":False,"square_attacker":(-1,-1)}
@@ -112,7 +113,7 @@ class Board :
             return {"check":True, "double_check":False, "square_attacker":checkS[0]["square_attacker"]}
         elif not possible_check[1] :
             return {"check":True, "double_check":False, "square_attacker":checkS[1]["square_attacker"]}
-        else:
+        elif not possible_check[2]:
             return {"check":True, "double_check":False, "square_attacker":checkS[2]["square_attacker"]}
 
         
