@@ -90,7 +90,6 @@ class chess_game ():
             # check if the move is possible according to the piece chosen and the current state of the board
             moving_piece = self.playground.chessboard[square_from[0]][square_from[1]]
 
-            # TODO -- > everything is checked until here
 
             if moving_piece._is_valid_move(square_from, square_to, self.playground.chessboard) :
                 # are we in check ? if yes we must see if the next move takes us out of it 
@@ -100,14 +99,15 @@ class chess_game ():
                     if Board.is_in_check(copy_board, curr_player.color)["check"] :
                         print("You are still in CHECK!")
                         continue
+                    
 
                 # then execute the move - we are sure is it not in check anymore
                 moving_piece._execute_move(self.playground.chessboard, square_from, square_to)
                 self.turn += 1
+                self.check # the current player
             else:
                 print("you cannot play this move try another one.")
 
-            # TODO - designing how the check/checkmate mechanism would work
             ischeck = Board.is_in_check(self.playground.chessboard, next_player.color)
             if ischeck["check"] :
                 print("CHECK!!")

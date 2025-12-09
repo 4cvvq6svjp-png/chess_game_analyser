@@ -29,10 +29,9 @@ class Board :
         # TODO - history of moves when going through the different variations
         self.explored_history = {}
 
-    # check/checkmate mechanism TODO
-
 
     def is_it_checkmate(BOARD_copy, color_of_king, attacking_piece_position, double_check):
+        """Verifies if there is a checkmate."""
         print("begin check for checkmate")
         # find the king on the board
         stop = False
@@ -63,9 +62,7 @@ class Board :
 
         # can we eat the piece ? -- the trick is to use these function to see if a piece could be eaten or not, 
         # this is equivalent to 
-        print(MoveUtility.check_diags(BOARD_copy, row, col, attacker.color)["check"])
-        print(MoveUtility.check_lines(BOARD_copy, row, col, attacker.color)["check"])
-        print(MoveUtility.check_horses(BOARD_copy, row, col, attacker.color)["check"])
+
         if    not  (MoveUtility.check_diags(BOARD_copy, row, col, attacker.color)["check"]\
                 and MoveUtility.check_lines(BOARD_copy, row, col, attacker.color)["check"]\
                 and MoveUtility.check_horses(BOARD_copy, row, col, attacker.color)["check"]):
