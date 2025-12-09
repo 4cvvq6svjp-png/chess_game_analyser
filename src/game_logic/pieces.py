@@ -23,7 +23,7 @@ class Piece(ABC):
         pass
 
     def _execute_move(self, board: 'Board', square_from: tuple, square_to: tuple):
-        move = {"piece" : board.chessboard[square_from[0]][square_from[1]],
+        move = {"piece" : board.chessboard[square_from[0]][square_from[1]].name,
                 "square_from" : square_from,
                 "square_to" : square_to}
         self._move_piece(board.chessboard, square_from, "remove")

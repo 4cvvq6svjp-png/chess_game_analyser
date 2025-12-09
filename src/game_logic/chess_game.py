@@ -25,6 +25,9 @@ class chess_game ():
         self.turn = 0
         self.game_is_live = True
         self.players = [Player("w"), Player("b")]
+        self.checkmate = False
+        self.stalemate = False
+        self.pat = False
 
 
     def _is_white_turn(self) :
@@ -85,37 +88,46 @@ class chess_game ():
                 print("Not a valid Move")
                 print("Please rewrite your move")
 
-            # check if the move is possible according to the piece chosen and the current state of the board
             moving_piece = self.playground.chessboard[square_from[0]][square_from[1]]
 
 
             if moving_piece._is_valid_move(square_from, square_to, self.playground.chessboard) :
-                # are we in check ? if yes we must see if the next move takes us out of it 
                 copy_board = deepcopy(self.playground)
                 moving_piece._execute_move(copy_board, square_from, square_to)
                 if Board.is_in_check(copy_board.chessboard, curr_player.color)["check"] :
                     print("you must not stay or go into CHECK!")
                     continue
-                    
 
-                # then execute the move - we are sure is it not in check anymore
                 moving_piece._execute_move(self.playground, square_from, square_to)
                 self.turn += 1
             else:
                 print("you cannot play this move try another one.")
 
+            # watch for checks and checkmate
             ischeck = Board.is_in_check(self.playground.chessboard, next_player.color)
             if ischeck["check"] :
                 print("CHECK!!")
                 copy_board_bis = deepcopy(self.playground.chessboard)
-                #print(f"checkmate ? --> {Board.is_it_checkmate(copy_board_bis, next_player.color, ischeck["square_attacker"], )}")
                 if Board.is_it_checkmate(copy_board_bis, next_player.color, ischeck["square_attacker"], ischeck["double_check"]):
                     self.game_is_live = False
+                    self.checkmate = True
+                    continue
+            
+            # watch for stalemate
+            isstalemate = self.playground._is_stalemate()
+            if isstalemate:
+                self.game_is_live = False
+                self.stalemate = True
+                continue
 
-
+            # watch for pat
 
         self.playground.display_board()
-        print(f"The player : {curr_player.color} won.")
+
+        if self.checkmate :
+            print(f"The player : {curr_player.color} won.")
+        elif self.stalemate :
+            print(f"This is a STALEMATE")
                 
             
 
