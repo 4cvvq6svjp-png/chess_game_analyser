@@ -1,5 +1,14 @@
 from abc import ABC, abstractmethod
 
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from .chess_board import Board
+
+
+
+
 class Piece(ABC):
     def __init__(self, color, name) :
         self.name = name
@@ -13,9 +22,13 @@ class Piece(ABC):
     def _move_piece(self, board, square, add_or_remove):
         pass
 
-    def _execute_move(self, BOARD: list[list['Piece']], square_from: tuple, square_to: tuple):
-        self._move_piece(BOARD, square_from, "remove")
-        self._move_piece(BOARD, square_to, "add")
+    def _execute_move(self, board: 'Board', square_from: tuple, square_to: tuple):
+        move = {"piece" : board.chessboard[square_from[0]][square_from[1]],
+                "square_from" : square_from,
+                "square_to" : square_to}
+        self._move_piece(board.chessboard, square_from, "remove")
+        self._move_piece(board.chessboard, square_to, "add")
+        board.play_stack.append(move)
 
 
 
