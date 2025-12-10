@@ -128,9 +128,13 @@ class Board :
         return False
     
     def _is_pat(self, color) :
-        # 
-        #
-        pass
+        for row in range(8) :
+            for col in range(8) :
+                if self.chessboard[row][col].color == color:
+                    piece = self.chessboard[row][col].color
+                    if piece._can_move() :
+                        return False
+        return True
 
 
 

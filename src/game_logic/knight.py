@@ -7,6 +7,7 @@ class Knight (Piece) :
 
     
     def _is_valid_move(self, square_from: tuple, square_to: tuple, BOARD: list[list['Piece']]):
+        """Returns True is a proposed move that lands in the chessboard is valid"""
         row, col = square_from
         rowTO, colTO = square_to
 
@@ -26,3 +27,13 @@ class Knight (Piece) :
             BOARD[row][col] = Knight(self.color)
         else :
             BOARD[row][col] = None
+    
+
+
+    def _can_move(self, board, square):
+        ROW, COL = square
+        horse_square = [[2,1], [2,-1], [-2,1], [-2,-1], [1,2], [-1,2], [1,-2], [-1,-2]]
+        for dr, dc in horse_square:
+            if ROW+dr in range(8) and COL+dc in range(8) and self._is_valid_move(square, (ROW+dr, COL+dc), board):
+                return True
+        return False

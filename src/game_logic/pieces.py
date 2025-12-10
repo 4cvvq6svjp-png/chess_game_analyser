@@ -23,7 +23,7 @@ class Piece(ABC):
         pass
 
     @abstractmethod
-    def _can_move(self, board) :
+    def _can_move(self, board, square) :
         pass
 
     def _execute_move(self, board: 'Board', square_from: tuple, square_to: tuple):
