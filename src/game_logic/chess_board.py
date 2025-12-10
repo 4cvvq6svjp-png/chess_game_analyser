@@ -128,7 +128,7 @@ class Board :
         return False
     
     def _is_pat(self, color) :
-        # is there a horse ?
+        # 
         #
         pass
 

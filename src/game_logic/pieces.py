@@ -22,6 +22,10 @@ class Piece(ABC):
     def _move_piece(self, board, square, add_or_remove):
         pass
 
+    @abstractmethod
+    def _can_move(self, board) :
+        pass
+
     def _execute_move(self, board: 'Board', square_from: tuple, square_to: tuple):
         move = {"piece" : board.chessboard[square_from[0]][square_from[1]].name,
                 "square_from" : square_from,
