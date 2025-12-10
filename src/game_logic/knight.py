@@ -1,12 +1,17 @@
 from pieces import Piece
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .chess_board import Board
+
 
 class Knight (Piece) :
     def __init__(self, color) :
         super().__init__(color, "horse")
 
     
-    def _is_valid_move(self, square_from: tuple, square_to: tuple, BOARD: list[list['Piece']]):
+    def _is_valid_move(self, square_from: tuple, square_to: tuple, board: 'Board'):
+        BOARD = board.chessboard
         """Returns True is a proposed move that lands in the chessboard is valid"""
         row, col = square_from
         rowTO, colTO = square_to

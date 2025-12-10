@@ -132,7 +132,7 @@ class Board :
             for col in range(8) :
                 if self.chessboard[row][col] and self.chessboard[row][col].color == color:
                     piece = self.chessboard[row][col]
-                    if piece._can_move(self.chessboard, (row,col)) :
+                    if piece._can_move(self, (row,col)) :
                         return False
         return True
 

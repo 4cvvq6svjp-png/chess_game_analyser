@@ -1,6 +1,11 @@
 from pieces import Piece
 from move_utility import MoveUtility
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .chess_board import Board
+
+
 
 class Queen(Piece) :
     def __init__(self, color) :
@@ -8,7 +13,8 @@ class Queen(Piece) :
 
 
 
-    def _is_valid_move(self, square_from: tuple, square_to: tuple, BOARD: list[list['Piece']]):
+    def _is_valid_move(self, square_from: tuple, square_to: tuple, board: 'Board'):
+        BOARD = board.chessboard
         return MoveUtility._is_diag_valid(square_from, square_to, BOARD) or MoveUtility._is_line_valid(square_from, square_to, BOARD)
 
 

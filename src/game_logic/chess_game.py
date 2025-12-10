@@ -92,7 +92,7 @@ class chess_game ():
             moving_piece = self.playground.chessboard[square_from[0]][square_from[1]]
 
 
-            if moving_piece._is_valid_move(square_from, square_to, self.playground.chessboard) :
+            if moving_piece._is_valid_move(square_from, square_to, self.playground) :
                 copy_board = deepcopy(self.playground)
                 moving_piece._execute_move(copy_board, square_from, square_to)
                 if Board.is_in_check(copy_board.chessboard, curr_player.color)["check"] :

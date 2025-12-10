@@ -1,6 +1,10 @@
 from pieces import Piece
 from move_utility import MoveUtility
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .chess_board import Board
+
 
 class King(Piece):
 
@@ -9,7 +13,8 @@ class King(Piece):
 
 
 
-    def _is_valid_move(self, square_from: tuple, square_to: tuple, BOARD: list[list['Piece']]):
+    def _is_valid_move(self, square_from: tuple, square_to: tuple, board: 'Board'):
+        BOARD = board.chessboard
         # check the length of the move
         if abs(square_to[0] - square_from[0]) > 1 or abs(square_to[1] - square_from[1]) > 1:
             return False
