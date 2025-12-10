@@ -19,3 +19,12 @@ class Queen(Piece) :
             BOARD[row][col] = Queen(self.color)
         else :
             BOARD[row][col] = None
+    
+
+    def _can_move(self, board, square):
+        ROW, COL = square
+        directions = [[0,1], [1,0], [0,-1], [-1,0], [1,1], [1,-1], [-1,-1], [-1,1]]
+        for dr, dc in directions:
+            if ROW+dr in range(8) and COL+dc in range(8) and self._is_valid_move(square, (ROW+dr, COL+dc), board):
+                return True
+        return False

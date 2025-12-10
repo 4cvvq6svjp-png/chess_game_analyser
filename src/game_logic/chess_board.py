@@ -130,15 +130,12 @@ class Board :
     def _is_pat(self, color) :
         for row in range(8) :
             for col in range(8) :
-                if self.chessboard[row][col].color == color:
-                    piece = self.chessboard[row][col].color
-                    if piece._can_move() :
+                if self.chessboard[row][col] and self.chessboard[row][col].color == color:
+                    piece = self.chessboard[row][col]
+                    if piece._can_move(self.chessboard, (row,col)) :
                         return False
         return True
 
-
-
-    
     
     def display_board(self):
         """To display the board in the terminal"""
