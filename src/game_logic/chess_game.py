@@ -25,6 +25,7 @@ class chess_game ():
         self.turn = 0
         self.game_is_live = True
         self.players = [Player("w"), Player("b")]
+        self.check = False
         self.checkmate = False
         self.stalemate = False
         self.pat = False
@@ -104,9 +105,11 @@ class chess_game ():
                 print("you cannot play this move try another one.")
 
             # watch for checks and checkmate
+            self.check = False
             ischeck = Board.is_in_check(self.playground.chessboard, next_player.color)
             if ischeck["check"] :
                 print("CHECK!!")
+                self.check = True
                 copy_board_bis = deepcopy(self.playground.chessboard)
                 if Board.is_it_checkmate(copy_board_bis, next_player.color, ischeck["square_attacker"], ischeck["double_check"]):
                     self.game_is_live = False
@@ -121,6 +124,9 @@ class chess_game ():
                 continue
 
             # watch for pat
+            if not self.check and self.pat :
+                self.game_is_live = False
+                self.pat = True
 
         self.playground.display_board()
 
@@ -128,6 +134,8 @@ class chess_game ():
             print(f"The player : {curr_player.color} won.")
         elif self.stalemate :
             print(f"This is a STALEMATE")
+        elif self.pat :
+            print("This is a PAT")
                 
             
 

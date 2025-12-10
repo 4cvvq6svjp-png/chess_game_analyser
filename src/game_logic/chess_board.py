@@ -120,13 +120,18 @@ class Board :
 
         
 
-    # pat : no move left/3 move repetition to be implemented
-    # TODO 
+    # TODO - pat
 
     def _is_stalemate(self) :
         if len(self.play_stack) >= 8 and self.play_stack[:4] == self.play_stack[4:] :
             return True
         return False
+    
+    def _is_pat(self, color) :
+        # is there a horse ?
+        #
+        pass
+
 
 
     
