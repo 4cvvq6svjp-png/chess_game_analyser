@@ -32,6 +32,8 @@ class Pawn (Piece) :
                 if last_move["piece"] == "pawn"\
                     and abs(last_move["square_from"][0] - last_move["square_to"][0]) == 2\
                     and last_move["square_to"][1] == square_to[1]:
+                    # removing the piece that got eaten
+                    BOARD[last_move["square_to"][0]][last_move["square_to"][1]]._move_piece(BOARD, last_move["square_to"], "remove")
                     return True
 
         # then it is a move forward
