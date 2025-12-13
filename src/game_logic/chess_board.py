@@ -77,10 +77,13 @@ class Board :
             col += int(copysign(1, c - col)) if c!=col else 0
             inbetween_square.append((row, col))
         print(inbetween_square)
+        
         for dr, dc in inbetween_square :
-            if not (MoveUtility.check_diags(BOARD, dr, dc, attacker.color)["check"]\
-                and MoveUtility.check_lines(BOARD, dr, dc, attacker.color)["check"]
-                and MoveUtility.check_horses(BOARD, dr, dc, attacker.color)["check"]):
+            print(MoveUtility.reach_sqr_with_pawn(BOARD, dr, dc, color_of_king))
+            if (MoveUtility.reach_sqr_from_lines(BOARD, dr, dc, color_of_king)\
+                or MoveUtility.reach_sqr_from_diags(BOARD, dr, dc, color_of_king)\
+                or MoveUtility.reach_sqr_with_pawn(BOARD, dr, dc, color_of_king)
+                or MoveUtility.reach_sqr_with_horse(BOARD, dr, dc, color_of_king)):
                 print(f"we can block on this square : {(dr,dc)}")
                 return False
         return True
@@ -172,7 +175,7 @@ class Board :
         elif name == "bishop":
             return Knight(color)
 
-    def init_board(self) :
+    def init_board(self):
         """To initialize the chessboard"""
         board = [[None for _ in range(8)] for _ in range(8)]
 
