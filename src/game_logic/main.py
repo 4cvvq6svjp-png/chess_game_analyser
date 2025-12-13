@@ -2,8 +2,10 @@ from chess_game import chess_game
 
 
 def main() :
-    jeu = chess_game()
+    jeu = chess_game("test")
     jeu.launch_game()
+
+
 
 
 if __name__ == "__main__" :

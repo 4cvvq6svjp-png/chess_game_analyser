@@ -7,6 +7,10 @@ from rook import Rook
 from queen import Queen
 from king import King
 from pawn import Pawn 
+from move_utility import MoveUtility
+from math import copysign
+
+
 
 from typing import TYPE_CHECKING
 
@@ -16,30 +20,125 @@ if TYPE_CHECKING:
 
 
 class Board :
-    def __init__(self):
-        # how move history will be stored
+    DIRECTION = {"w": -1, "b": 1}
+
+    def __init__(self, key):
         self.play_stack = []
-        self.chessboard: list[list['Piece']] = self.init_board()
+        self.chessboard: list[list['Piece']] = self.init_board(key)
         # TODO - history of moves when going through the different variations
         self.explored_history = {}
 
-    # check/checkmate mechanism -- does it belong here ? TODO
-    ## surtout comment je vais faire pour valider un move après un check? -- _is_valid_move() à modif ? 
-    ## 
-    def is_it_checkmate(BOARD, color_of_king):
-        pass
 
-    def is_in_check(BOARD, color_of_king) : #check the oppostire color from the precedent move
-        pass
+    def is_it_checkmate(self, color_of_king, attacking_piece_position, double_check):
+        BOARD = self.chessboard
+        """Verifies if there is a checkmate."""
+        print("begin check for checkmate")
+        # find the king on the board
+        stop = False
+        for r in range(8) :
+            for c in range(8) :
+                if (BOARD[r][c] is not None) and (BOARD[r][c].name == "king")\
+                    and (BOARD[r][c].color == color_of_king):
+                    stop = True
+                    break
+            if stop :
+                break
+        king = BOARD[r][c]
+        
+        # can the king move ?
+        for dr in [-1, 1]:
+            for dc in [-1, 1]:
+                if (r+dr in range(8)) and (c+dc in range(8)) and\
+                    (BOARD[r+dr][c+dc] is None) and\
+                    (king._is_valid_move((r,c), (r+dr, c+dc), self)) :
+                    return False
+        
+        row, col = attacking_piece_position
+        attacker = BOARD[row][col]
+        print("the king cannot move")
+        # If the attack is double then it is a mate
+        if double_check:
+            return True
+
+        if    not  (MoveUtility.check_diags(BOARD, row, col, attacker.color)["check"]\
+                and MoveUtility.check_lines(BOARD, row, col, attacker.color)["check"]\
+                and MoveUtility.check_horses(BOARD, row, col, attacker.color)["check"]):
+            return False
+        print("we cannot eat the piece")
+        # if not a horse/pawn --> can we block it ?
+        if attacker.name in ["horse", "pawn"] : return True
+
+        inbetween_square = []
+        while abs(row - r)>1 or abs(col - c)>1 :
+            row += int(copysign(1, r - row)) if r!=row else 0
+            col += int(copysign(1, c - col)) if c!=col else 0
+            inbetween_square.append((row, col))
+        print(inbetween_square)
+        
+        for dr, dc in inbetween_square :
+            if (MoveUtility.reach_sqr_from_lines(BOARD, dr, dc, color_of_king)\
+                or MoveUtility.reach_sqr_from_diags(BOARD, dr, dc, color_of_king)\
+                or MoveUtility.reach_sqr_with_pawn(BOARD, dr, dc, color_of_king)
+                or MoveUtility.reach_sqr_with_horse(BOARD, dr, dc, color_of_king)):
+                print(f"we can block on this square : {(dr,dc)}")
+                return False
+        return True
 
 
-    # pat : no move left/3 move repetition to be implemented
-    # TODO 
 
+    def is_in_check(self, color_of_king) :
+        """Verify if there is a check on the board"""
+        BOARD = self.chessboard
+        stop = False
+        for r in range(8) :
+            for c in range(8) :
+                if (BOARD[r][c] is not None) and (BOARD[r][c].name == "king")\
+                    and (BOARD[r][c].color == color_of_king):
+                    stop = True
+                    break
+            if stop :
+                break
+
+        # let's locate the checks
+        checkS = [MoveUtility.check_diags(BOARD, r, c, color_of_king),
+                  MoveUtility.check_lines(BOARD, r, c, color_of_king),
+                  MoveUtility.check_horses(BOARD, r, c, color_of_king)]
+        possible_check = [elt["check"] for elt in checkS]
+        
+        trues = possible_check.count(True)
+        if trues == 3 :
+            return {"check":False, "double_check":False,"square_attacker":(-1,-1)}
+        elif trues <= 1 :
+            return {"check":True, "double_check":True, "square_attacker":(-1,-1)}
+        
+        if not possible_check[0] :
+            return {"check":True, "double_check":False, "square_attacker":checkS[0]["square_attacker"]}
+        elif not possible_check[1] :
+            return {"check":True, "double_check":False, "square_attacker":checkS[1]["square_attacker"]}
+        elif not possible_check[2]:
+            return {"check":True, "double_check":False, "square_attacker":checkS[2]["square_attacker"]}
+
+        
+
+    def _is_stalemate(self) :
+        """Checks if there is a stalemate by repetition of 3 positions"""
+        if len(self.play_stack) >= 8 and self.play_stack[:4] == self.play_stack[4:] :
+            return True
+        return False
+    
+    def _is_pat(self, color) :
+        """Checks if there is a stalemate from no move left by certain player"""
+        for row in range(8) :
+            for col in range(8) :
+                if self.chessboard[row][col] and self.chessboard[row][col].color == color:
+                    piece = self.chessboard[row][col]
+                    if piece._can_move(self, (row,col)) :
+                        return False
+        return True
 
     
-    # to display the board in the Terminal 
     def display_board(self):
+        """To display the board in the terminal"""
         for row in range(8) :
             line = ["|"]
             for col in range(8) :
@@ -50,11 +149,38 @@ class Board :
                     line.append("|")
                 else:
                     line.append(" ")
+                    line.append("|")
             print("  ".join(line))
             print()
+    
+    def _isbackrank_PawnMove(self, square_from, square_to) :
+        """to check before execution if a move if a pawn going to a backrank"""
+        backrank = {0,7}
+        p = self.chessboard[square_from[0]][square_from[1]]
+        if p and p.name == "pawn" and square_to[0] in backrank:
+            return True
+        return False      
 
 
-    def init_board(self) :
+    def create_piece_by_name(name, color) :
+        if name == "queen":
+            return Queen(color)
+        elif name == "rook":
+            return Rook(color)
+        elif name == "knight":
+            return Knight(color)
+        elif name == "bishop":
+            return Bishop(color)
+    
+    def init_board(self, key) :
+        if key == "test" :
+            return self.init_test_board()
+        else :
+            return self.init_classic_board()
+
+
+    def init_classic_board(self):
+        """To initialize the chessboard"""
         board = [[None for _ in range(8)] for _ in range(8)]
 
         ### Init white pieces
@@ -98,4 +224,18 @@ class Board :
         #init Queen and king
         board[0][4] = King("b")
         board[0][3] = Queen("b")
+        return board
+    
+
+    def init_test_board(self):
+        """To initialize the chessboard"""
+        board = [[None for _ in range(8)] for _ in range(8)]
+
+        board[4][4] = King("w")
+        board[4][3] = Queen("w")
+
+        board[3][0] = Pawn("b")
+        board[4][0] = Pawn("w")
+        ### Init Black pieces
+        board[0][6] = King("b")
         return board
