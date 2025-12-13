@@ -38,9 +38,10 @@ class Pawn (Piece) :
 
         # then it is a move forward
         if square_from[1] == square_to[1] :
-            if square_to[0] - square_from[0] == m:
+            if square_to[0] - square_from[0] == m and BOARD[square_to[0]][square_to[1]] is None:
                 return True
-            elif square_to[0] - square_from[0] == 2*m and square_from[0] == Pawn.starting_rank(self.color):
+            elif square_to[0] - square_from[0] == 2*m and square_from[0] == Pawn.starting_rank(self.color)\
+                and BOARD[square_to[0]][square_to[1]] is None:
                 return True
             
 

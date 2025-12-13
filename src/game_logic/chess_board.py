@@ -22,9 +22,9 @@ if TYPE_CHECKING:
 class Board :
     DIRECTION = {"w": -1, "b": 1}
 
-    def __init__(self):
+    def __init__(self, key):
         self.play_stack = []
-        self.chessboard: list[list['Piece']] = self.init_board()
+        self.chessboard: list[list['Piece']] = self.init_board(key)
         # TODO - history of moves when going through the different variations
         self.explored_history = {}
 
@@ -79,7 +79,6 @@ class Board :
         print(inbetween_square)
         
         for dr, dc in inbetween_square :
-            print(MoveUtility.reach_sqr_with_pawn(BOARD, dr, dc, color_of_king))
             if (MoveUtility.reach_sqr_from_lines(BOARD, dr, dc, color_of_king)\
                 or MoveUtility.reach_sqr_from_diags(BOARD, dr, dc, color_of_king)\
                 or MoveUtility.reach_sqr_with_pawn(BOARD, dr, dc, color_of_king)
@@ -125,11 +124,13 @@ class Board :
         
 
     def _is_stalemate(self) :
+        """Checks if there is a stalemate by repetition of 3 positions"""
         if len(self.play_stack) >= 8 and self.play_stack[:4] == self.play_stack[4:] :
             return True
         return False
     
     def _is_pat(self, color) :
+        """Checks if there is a stalemate from no move left by certain player"""
         for row in range(8) :
             for col in range(8) :
                 if self.chessboard[row][col] and self.chessboard[row][col].color == color:
@@ -164,7 +165,6 @@ class Board :
         return False      
 
 
-
     def create_piece_by_name(name, color) :
         if name == "queen":
             return Queen(color)
@@ -173,9 +173,16 @@ class Board :
         elif name == "knight":
             return Knight(color)
         elif name == "bishop":
-            return Knight(color)
+            return Bishop(color)
+    
+    def init_board(self, key) :
+        if key == "test" :
+            return self.init_test_board()
+        else :
+            return self.init_classic_board()
 
-    def init_board(self):
+
+    def init_classic_board(self):
         """To initialize the chessboard"""
         board = [[None for _ in range(8)] for _ in range(8)]
 
@@ -220,4 +227,18 @@ class Board :
         #init Queen and king
         board[0][4] = King("b")
         board[0][3] = Queen("b")
+        return board
+    
+
+    def init_test_board(self):
+        """To initialize the chessboard"""
+        board = [[None for _ in range(8)] for _ in range(8)]
+
+        board[4][4] = King("w")
+        board[4][3] = Queen("w")
+
+        board[3][0] = Pawn("b")
+        board[4][0] = Pawn("w")
+        ### Init Black pieces
+        board[0][6] = King("b")
         return board

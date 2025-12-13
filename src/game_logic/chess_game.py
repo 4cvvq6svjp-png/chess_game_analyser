@@ -20,8 +20,8 @@ class chess_game ():
     COLOR = ["w", "b"]
 
 
-    def __init__(self):
-        self.playground = Board()
+    def __init__(self, key):
+        self.playground = Board(key)
         self.turn = 0
         self.game_is_live = True
         self.players = [Player("w"), Player("b")]
