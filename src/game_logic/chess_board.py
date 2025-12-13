@@ -60,9 +60,6 @@ class Board :
         if double_check:
             return True
 
-        # can we eat the piece ? -- the trick is to use these function to see if a piece could be eaten or not, 
-        # this is equivalent to 
-
         if    not  (MoveUtility.check_diags(BOARD, row, col, attacker.color)["check"]\
                 and MoveUtility.check_lines(BOARD, row, col, attacker.color)["check"]\
                 and MoveUtility.check_horses(BOARD, row, col, attacker.color)["check"]):

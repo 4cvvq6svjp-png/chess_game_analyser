@@ -132,7 +132,7 @@ class chess_game ():
                 continue
 
             # watch for pat
-            if not self.check and self.turn > 0 and board._is_pat(next_player.color) :
+            if not self.check and self.turn > 18 and board._is_pat(next_player.color) :
                 self.game_is_live = False
                 self.pat = True
 
