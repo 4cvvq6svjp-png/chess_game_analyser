@@ -98,9 +98,18 @@ class chess_game ():
                 if Board.is_in_check(copy_board.chessboard, curr_player.color)["check"] :
                     print("you must not stay or go into CHECK!")
                     continue
-
-                moving_piece._execute_move(self.playground, square_from, square_to)
-                self.turn += 1
+                
+                if Board._isbackrank_PawnMove():
+                    while True:
+                        piece_name = curr_player.tell_a_piece()
+                        if piece_name in ["queen", "rook", "knight", "bishop"]:
+                            new_piece = Board.create_piece_by_name(piece_name, curr_player.color)
+                            break
+                    moving_piece._move_piece(self.playground.chessboard, square_from, "remove")
+                    new_piece._move_piece(self.playground.chessboard, square_to, "add")
+                else:
+                    moving_piece._execute_move(self.playground, square_from, square_to)
+                self.turn += 1  
             else:
                 print("you cannot play this move try another one.")
 

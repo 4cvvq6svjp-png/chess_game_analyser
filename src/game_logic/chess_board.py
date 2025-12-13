@@ -120,8 +120,6 @@ class Board :
 
         
 
-    # TODO - pat
-
     def _is_stalemate(self) :
         if len(self.play_stack) >= 8 and self.play_stack[:4] == self.play_stack[4:] :
             return True
@@ -152,7 +150,26 @@ class Board :
                     line.append("|")
             print("  ".join(line))
             print()
+    
+    def _isbackrank_PawnMove(self, square_from, square_to) :
+        """to check before execution if a move if a pawn going to a backrank"""
+        backrank = set(0,7)
+        p = self.chessboard[square_from[0]][square_from[1]]
+        if p and p.name == "pawn" and square_to[0] in backrank:
+            return True
+        return False      
 
+
+
+    def create_piece_by_name(name, color) :
+        if name == "queen":
+            return Queen(color)
+        elif name == "rook":
+            return Rook(color)
+        elif name == "knight":
+            return Knight(color)
+        elif name == "bishop":
+            return Knight(color)
 
     def init_board(self) :
         """To initialize the chessboard"""
