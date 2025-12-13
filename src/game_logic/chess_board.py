@@ -87,8 +87,9 @@ class Board :
 
 
 
-    def is_in_check(BOARD, color_of_king) :
+    def is_in_check(self, color_of_king) :
         """Verify if there is a check on the board"""
+        BOARD = self.chessboard
         stop = False
         for r in range(8) :
             for c in range(8) :

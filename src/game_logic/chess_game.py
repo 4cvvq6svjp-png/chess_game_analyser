@@ -60,13 +60,13 @@ class chess_game ():
 
 
     def launch_game(self) :
-
+        board = self.playground
         while self.game_is_live :
             curr_player = self.players[self.turn%2]
             next_player = self.players[(self.turn+1)%2]
 
             # Display 
-            self.playground.display_board()
+            board.display_board()
 
             # ask for a move
             move = curr_player.tell_a_move()
@@ -89,54 +89,54 @@ class chess_game ():
                 print("Not a valid Move")
                 print("Please rewrite your move")
 
-            moving_piece = self.playground.chessboard[square_from[0]][square_from[1]]
+            moving_piece = board.chessboard[square_from[0]][square_from[1]]
 
 
-            if moving_piece._is_valid_move(square_from, square_to, self.playground) :
-                copy_board = deepcopy(self.playground)
+            if moving_piece._is_valid_move(square_from, square_to, board) :
+                copy_board = deepcopy(board)
                 moving_piece._execute_move(copy_board, square_from, square_to)
-                if Board.is_in_check(copy_board.chessboard, curr_player.color)["check"] :
+                if copy_board.is_in_check(curr_player.color)["check"] :
                     print("you must not stay or go into CHECK!")
                     continue
                 
-                if self.playground._isbackrank_PawnMove(square_from, square_to):
+                if board._isbackrank_PawnMove(square_from, square_to):
                     while True:
                         piece_name = curr_player.tell_a_piece()
                         if piece_name in ["queen", "rook", "knight", "bishop"]:
                             new_piece = Board.create_piece_by_name(piece_name, curr_player.color)
                             break
-                    moving_piece._move_piece(self.playground.chessboard, square_from, "remove")
-                    new_piece._move_piece(self.playground.chessboard, square_to, "add")
+                    moving_piece._move_piece(board.chessboard, square_from, "remove")
+                    new_piece._move_piece(board.chessboard, square_to, "add")
                 else:
-                    moving_piece._execute_move(self.playground, square_from, square_to)
+                    moving_piece._execute_move(board, square_from, square_to)
                 self.turn += 1  
             else:
                 print("you cannot play this move try another one.")
 
             # watch for checks and checkmate
             self.check = False
-            ischeck = Board.is_in_check(self.playground.chessboard, next_player.color)
+            ischeck = board.is_in_check(next_player.color)
             if ischeck["check"] :
                 print("CHECK!!")
                 self.check = True
-                if self.playground.is_it_checkmate(next_player.color, ischeck["square_attacker"], ischeck["double_check"]):
+                if board.is_it_checkmate(next_player.color, ischeck["square_attacker"], ischeck["double_check"]):
                     self.game_is_live = False
                     self.checkmate = True
                     continue
             
             # watch for stalemate
-            isstalemate = self.playground._is_stalemate()
+            isstalemate = board._is_stalemate()
             if isstalemate:
                 self.game_is_live = False
                 self.stalemate = True
                 continue
 
             # watch for pat
-            if not self.check and self.turn > 0 and self.playground._is_pat(next_player.color) :
+            if not self.check and self.turn > 0 and board._is_pat(next_player.color) :
                 self.game_is_live = False
                 self.pat = True
 
-        self.playground.display_board()
+        board.display_board()
 
         if self.checkmate :
             print(f"The player : {curr_player.color} won.")
