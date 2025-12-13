@@ -23,38 +23,38 @@ class Board :
     DIRECTION = {"w": -1, "b": 1}
 
     def __init__(self):
-        # how move history will be stored
         self.play_stack = []
         self.chessboard: list[list['Piece']] = self.init_board()
         # TODO - history of moves when going through the different variations
         self.explored_history = {}
 
 
-    def is_it_checkmate(BOARD_copy, color_of_king, attacking_piece_position, double_check):
+    def is_it_checkmate(self, color_of_king, attacking_piece_position, double_check):
+        BOARD = self.chessboard
         """Verifies if there is a checkmate."""
         print("begin check for checkmate")
         # find the king on the board
         stop = False
         for r in range(8) :
             for c in range(8) :
-                if (BOARD_copy[r][c] is not None) and (BOARD_copy[r][c].name == "king")\
-                    and (BOARD_copy[r][c].color == color_of_king):
+                if (BOARD[r][c] is not None) and (BOARD[r][c].name == "king")\
+                    and (BOARD[r][c].color == color_of_king):
                     stop = True
                     break
             if stop :
                 break
-        king = BOARD_copy[r][c]
+        king = BOARD[r][c]
         
         # can the king move ?
         for dr in [-1, 1]:
             for dc in [-1, 1]:
                 if (r+dr in range(8)) and (c+dc in range(8)) and\
-                    (BOARD_copy[r+dr][c+dc] is None) and\
-                    (king._is_valid_move((r,c), (r+dr, c+dc), BOARD_copy)) :
+                    (BOARD[r+dr][c+dc] is None) and\
+                    (king._is_valid_move((r,c), (r+dr, c+dc), self)) :
                     return False
         
         row, col = attacking_piece_position
-        attacker = BOARD_copy[row][col]
+        attacker = BOARD[row][col]
         print("the king cannot move")
         # If the attack is double then it is a mate
         if double_check:
@@ -63,9 +63,9 @@ class Board :
         # can we eat the piece ? -- the trick is to use these function to see if a piece could be eaten or not, 
         # this is equivalent to 
 
-        if    not  (MoveUtility.check_diags(BOARD_copy, row, col, attacker.color)["check"]\
-                and MoveUtility.check_lines(BOARD_copy, row, col, attacker.color)["check"]\
-                and MoveUtility.check_horses(BOARD_copy, row, col, attacker.color)["check"]):
+        if    not  (MoveUtility.check_diags(BOARD, row, col, attacker.color)["check"]\
+                and MoveUtility.check_lines(BOARD, row, col, attacker.color)["check"]\
+                and MoveUtility.check_horses(BOARD, row, col, attacker.color)["check"]):
             return False
         print("we cannot eat the piece")
         # if not a horse/pawn --> can we block it ?
@@ -78,9 +78,9 @@ class Board :
             inbetween_square.append((row, col))
         print(inbetween_square)
         for dr, dc in inbetween_square :
-            if not (MoveUtility.check_diags(BOARD_copy, dr, dc, attacker.color)["check"]\
-                and MoveUtility.check_lines(BOARD_copy, dr, dc, attacker.color)["check"]
-                and MoveUtility.check_horses(BOARD_copy, dr, dc, attacker.color)["check"]):
+            if not (MoveUtility.check_diags(BOARD, dr, dc, attacker.color)["check"]\
+                and MoveUtility.check_lines(BOARD, dr, dc, attacker.color)["check"]
+                and MoveUtility.check_horses(BOARD, dr, dc, attacker.color)["check"]):
                 print(f"we can block on this square : {(dr,dc)}")
                 return False
         return True
@@ -153,7 +153,7 @@ class Board :
     
     def _isbackrank_PawnMove(self, square_from, square_to) :
         """to check before execution if a move if a pawn going to a backrank"""
-        backrank = set(0,7)
+        backrank = {0,7}
         p = self.chessboard[square_from[0]][square_from[1]]
         if p and p.name == "pawn" and square_to[0] in backrank:
             return True

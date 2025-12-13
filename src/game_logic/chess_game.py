@@ -99,7 +99,7 @@ class chess_game ():
                     print("you must not stay or go into CHECK!")
                     continue
                 
-                if Board._isbackrank_PawnMove():
+                if self.playground._isbackrank_PawnMove(square_from, square_to):
                     while True:
                         piece_name = curr_player.tell_a_piece()
                         if piece_name in ["queen", "rook", "knight", "bishop"]:
@@ -119,8 +119,7 @@ class chess_game ():
             if ischeck["check"] :
                 print("CHECK!!")
                 self.check = True
-                copy_board_bis = deepcopy(self.playground.chessboard)
-                if Board.is_it_checkmate(copy_board_bis, next_player.color, ischeck["square_attacker"], ischeck["double_check"]):
+                if self.playground.is_it_checkmate(next_player.color, ischeck["square_attacker"], ischeck["double_check"]):
                     self.game_is_live = False
                     self.checkmate = True
                     continue
