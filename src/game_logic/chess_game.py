@@ -59,6 +59,11 @@ class chess_game ():
         return False
 
 
+    #############################################
+    #### MAIN METHOD TO PLAY IN THE TERMINAL ####
+    #############################################
+
+
     def launch_game(self) :
         board = self.playground
         while self.game_is_live :
@@ -144,6 +149,27 @@ class chess_game ():
             print(f"This is a STALEMATE")
         elif self.pat :
             print("This is a PAT")
+
+
+    ############################################
+    #### MAIN METHODS TO PLAY USING THE API ####
+    ############################################
+
+
+    def execute_move(self) :
+        return 
+
+    
+    def export_state(self):
+        """return message after a move was executed"""
+        return {
+            "message": "Coup valide",
+            "player_turn": self.turn,
+            "game_live": self.game_is_live,
+            "board": self.playground 
+        }
+
+
                 
             
 
