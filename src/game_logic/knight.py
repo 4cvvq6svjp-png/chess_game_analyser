@@ -16,7 +16,7 @@ class Knight (Piece) :
         row, col = square_from
         rowTO, colTO = square_to
 
-        if not ((abs(row - rowTO) == 2 and abs(col - colTO)) or (abs(row - rowTO) == 1 and abs(col - colTO) == 2)) :
+        if not ((abs(row - rowTO) == 2 and abs(col - colTO) == 1) or (abs(row - rowTO) == 1 and abs(col - colTO) == 2)) :
             return False
 
         # landing square has a same color piece on it
