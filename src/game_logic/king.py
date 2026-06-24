@@ -21,6 +21,10 @@ class King(Piece):
 
         rowTO, colTO = square_to
 
+        # the landing square must not hold a friendly piece
+        if BOARD[rowTO][colTO] is not None and BOARD[rowTO][colTO].color == self.color:
+            return False
+
         return   MoveUtility.check_diags(BOARD, rowTO, colTO, self.color)["check"]\
              and MoveUtility.check_lines(BOARD, rowTO, colTO, self.color)["check"]\
              and MoveUtility.check_horses(BOARD, rowTO, colTO, self.color)["check"]
