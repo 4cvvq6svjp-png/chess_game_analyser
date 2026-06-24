@@ -41,7 +41,8 @@ were intentionally left untouched.
   exactly 8 plies and isn't true threefold repetition.
 - `_is_pat` / `_can_move` don't filter moves that leave the own king in check.
 
-These are flagged in the README's running notes as future work.
+These are written up in detail — with rationale and a suggested approach for
+each — in [`chess-logic-todo.md`](./chess-logic-todo.md).
 
 ## Tests
 A dependency-free `unittest` suite lives in `tests/` (Python stdlib, no pytest).
