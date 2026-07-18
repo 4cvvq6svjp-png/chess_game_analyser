@@ -77,14 +77,11 @@ class MoveUtility :
             if BOARD[row][col] is None or BOARD[row][col].color == color: continue
 
             if BOARD[row][col].name in ["queen", "bishop"]:
-                print("bishop or queen")
                 return {"check":False, "square_attacker":(row,col)}
-            elif (BOARD[row][col].name == "king") and (abs(row - ROW) < 1 and abs(col - COL) < 1) :
-                print("king")
+            elif (BOARD[row][col].name == "king") and (abs(row - ROW) <= 1 and abs(col - COL) <= 1) :
                 return {"check":False, "square_attacker":(row,col)}
             ## à verif, c'est la logique derrière un échec fait par un pion
             elif (BOARD[row][col].name == "pawn") and (row - ROW == m) :
-                print(f"pawn {row, col} et la dame :{ROW, COL}")
                 return {"check":False, "square_attacker":(row,col)}
         return {"check":True, "square_attacker":(-1, -1)}
     
@@ -105,8 +102,7 @@ class MoveUtility :
 
             if BOARD[row][col].name in ["queen", "rook"] :
                 return {"check":False, "square_attacker":(row,col)}
-            elif (BOARD[row][col].name == "king") and (abs(row - ROW) < 1 and abs(col - COL) < 1) :
-                print("ici")
+            elif (BOARD[row][col].name == "king") and (abs(row - ROW) <= 1 and abs(col - COL) <= 1) :
                 return {"check":False, "square_attacker":(row,col)}
         return {"check":True, "square_attacker":(-1,-1)}
     
@@ -173,10 +169,11 @@ class MoveUtility :
         if ROW-m in range(8) and BOARD[ROW-m][COL] and BOARD[ROW-m][COL].name == "pawn"\
             and BOARD[ROW-m][COL].color == color :
             return True
-        elif ROW-2*m == MoveUtility.first_rank[color] and BOARD[ROW-2*m][COL] and BOARD[ROW-2*m][COL].name == "pawn"\
-            and BOARD[ROW-m][COL].color == color :
+        elif ROW-2*m == MoveUtility.first_rank[color] and BOARD[ROW-m][COL] is None\
+            and BOARD[ROW-2*m][COL] and BOARD[ROW-2*m][COL].name == "pawn"\
+            and BOARD[ROW-2*m][COL].color == color :
             return True
-        return False        
+        return False
 
 
     def reach_sqr_with_horse(BOARD, ROW, COL, color):

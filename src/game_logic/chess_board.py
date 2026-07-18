@@ -1,5 +1,3 @@
-import numpy as np
-
 from pieces import Piece
 from bishop import Bishop
 from knight import Knight
@@ -30,9 +28,8 @@ class Board :
 
 
     def is_it_checkmate(self, color_of_king, attacking_piece_position, double_check):
-        BOARD = self.chessboard
         """Verifies if there is a checkmate."""
-        print("begin check for checkmate")
+        BOARD = self.chessboard
         # find the king on the board
         stop = False
         for r in range(8) :
@@ -45,17 +42,15 @@ class Board :
                 break
         king = BOARD[r][c]
         
-        # can the king move ?
-        for dr in [-1, 1]:
-            for dc in [-1, 1]:
-                if (r+dr in range(8)) and (c+dc in range(8)) and\
-                    (BOARD[r+dr][c+dc] is None) and\
-                    (king._is_valid_move((r,c), (r+dr, c+dc), self)) :
-                    return False
+        # can the king move ? (check the 8 surrounding squares, not only diagonals)
+        for dr, dc in [[0,1], [1,0], [0,-1], [-1,0], [1,1], [1,-1], [-1,-1], [-1,1]]:
+            if (r+dr in range(8)) and (c+dc in range(8)) and\
+                (BOARD[r+dr][c+dc] is None) and\
+                (king._is_valid_move((r,c), (r+dr, c+dc), self)) :
+                return False
         
         row, col = attacking_piece_position
         attacker = BOARD[row][col]
-        print("the king cannot move")
         # If the attack is double then it is a mate
         if double_check:
             return True
@@ -64,7 +59,6 @@ class Board :
                 and MoveUtility.check_lines(BOARD, row, col, attacker.color)["check"]\
                 and MoveUtility.check_horses(BOARD, row, col, attacker.color)["check"]):
             return False
-        print("we cannot eat the piece")
         # if not a horse/pawn --> can we block it ?
         if attacker.name in ["horse", "pawn"] : return True
 
@@ -73,14 +67,12 @@ class Board :
             row += int(copysign(1, r - row)) if r!=row else 0
             col += int(copysign(1, c - col)) if c!=col else 0
             inbetween_square.append((row, col))
-        print(inbetween_square)
-        
+
         for dr, dc in inbetween_square :
             if (MoveUtility.reach_sqr_from_lines(BOARD, dr, dc, color_of_king)\
                 or MoveUtility.reach_sqr_from_diags(BOARD, dr, dc, color_of_king)\
                 or MoveUtility.reach_sqr_with_pawn(BOARD, dr, dc, color_of_king)
                 or MoveUtility.reach_sqr_with_horse(BOARD, dr, dc, color_of_king)):
-                print(f"we can block on this square : {(dr,dc)}")
                 return False
         return True
 

@@ -88,6 +88,7 @@ class chess_game ():
             except Exception:
                 print("Not a valid Move")
                 print("Please rewrite your move")
+                continue
 
             moving_piece = board.chessboard[square_from[0]][square_from[1]]
 
