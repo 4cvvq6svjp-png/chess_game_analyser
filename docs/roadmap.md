@@ -85,6 +85,99 @@ Les points 1-3 disparaissent d'eux-mêmes avec le générateur de coups légaux
 
 ## 4. Architecture cible
 
+### 4.0 Pourquoi un générateur de coups, et pas seulement un validateur
+
+Valider un coup au moment de l'envoi est le chemin le moins cher quand la
+question est « le joueur propose e2e4, est-ce légal ? ». C'est ce que fait le
+code actuel, et il le fait bien. Le problème n'est pas le coût : c'est que
+**toutes les features visées posent la question dans l'autre sens**.
+
+| Feature | Question réellement posée |
+|---|---|
+| Pastilles sur l'échiquier | « Je clique ce cavalier : quelles cases s'allument ? » |
+| Mat / pat | « L'adversaire a-t-il **zéro** coup légal ? » |
+| IA minimax | « Quels coups explorer à ce nœud ? » |
+| Import PGN (`Nf3`) | « Quel cavalier peut aller en f3 ? » |
+
+**L'échiquier.** Avec un simple validateur, le front devrait demander « et a1 ?
+et a2 ? … » — 64 questions par clic. On finit par écrire un endpoint qui répond
+« voici la liste » : c'est un générateur, écrit sans le dire.
+
+**Le mat.** « Est-ce mat ? » signifie « l'adversaire n'a aucun coup légal » :
+une question d'énumération par nature. `is_it_checkmate` la contourne en
+raisonnant par cas (le roi peut-il fuir ? manger l'attaquant ? s'interposer ?)
+et les trois bugs du §3 sont exactement dans ces trois cas. Avec un générateur,
+`mat = en_échec and not legal_moves()` : plus de cas particulier à oublier.
+
+**L'IA.** Minimax a besoin de la liste des coups à chaque nœud. Sans
+générateur, il n'y a pas de point d'entrée du tout.
+
+**Le PGN.** `Nf3` ne dit pas d'où vient le cavalier ; on le retrouve en
+filtrant les coups légaux. Le parser SAN se pose par-dessus en ~30 lignes.
+
+### Le coût est plus faible que celui payé aujourd'hui
+
+Une position typique a 30-40 coups légaux. Générer la liste = produire les ~40
+candidats géométriques puis tester pour chacun « mon roi est-il en échec
+après ? ». Ce test par candidat est **exactement** ce que `launch_game` fait
+déjà à chaque coup joué (`deepcopy` + `is_in_check`). Générer tous les coups
+coûte donc ~40 fois un coup validé : bien moins d'une milliseconde.
+
+Et le code **énumère déjà**, de façon incomplète : `_is_pat` parcourt les 64
+cases et essaie 8 directions par pièce ; `is_it_checkmate` scanne les 8 cases
+autour du roi puis toutes les cases d'interposition. Le générateur n'ajoute pas
+de calcul, il remplace trois demi-énumérations éparpillées et boguées par une
+seule, correcte.
+
+Le vrai enjeu de performance est ailleurs : remplacer `deepcopy(Board)` par une
+copie légère (ou un make/unmake). Invisible pour un coup humain ; décisif pour
+le minimax en profondeur 4 (~40⁴ ≈ 2,5 M de nœuds), où c'est la différence
+entre plusieurs minutes et quelques secondes par coup.
+
+Le validateur ne disparaît pas : `is_legal(move) = move in
+position.legal_moves()`. Le chemin « le joueur envoie un coup » reste une ligne.
+
+### La bibliothèque de pièces est conservée
+
+| Fichier | Sort |
+|---|---|
+| `pieces.py`, `pawn/knight/bishop/rook/queen/king.py` | **gardés**, une méthode change de forme |
+| `move_utility.py` | ray-walking réutilisé ; les `reach_sqr_*` (~60 l.) deviennent inutiles |
+| `chess_board.py` | `is_it_checkmate` supprimé, `_is_pat` réduit à une ligne |
+| `chess_game.py` | scindé : objet de partie pur + adaptateur CLI |
+| `tests/` | gardés, réécrits sur la nouvelle signature |
+
+```python
+# avant
+class Knight(Piece):
+    def _is_valid_move(self, square_from, square_to, board) -> bool: ...
+
+# après
+class Knight(Piece):
+    def pseudo_moves(self, position, square) -> Iterator[Move]: ...
+```
+
+Même hiérarchie, mêmes fichiers : chaque pièce continue de connaître sa propre
+géométrie. Elle *produit* ses destinations au lieu d'en *juger* une. Le filtre
+« ça laisse-t-il mon roi en échec ? » est écrit **une seule fois**, sur
+`Position`, au lieu d'être oublié à trois endroits.
+
+Les droits de roque vont sur `Position` (comme dans la FEN), pas sur les
+pièces : les classes restent sans état, et le blocage n° 4 du §2 (identité de
+la pièce perdue à chaque coup) s'évapore au lieu d'être à corriger.
+
+### Migration incrémentale, pas big-bang
+
+1. Ajouter `pseudo_moves()` à chaque classe **à côté** de `_is_valid_move` —
+   rien ne casse, les 51 tests restent verts
+2. Ajouter `Position.legal_moves()` qui agrège et filtre
+3. Brancher **perft** → on voit immédiatement si les règles sont bonnes
+4. Réécrire `is_it_checkmate` / `_is_pat` par-dessus → les trois bugs tombent
+5. Ajouter roque, FEN, nulles
+6. Supprimer `_is_valid_move` et `reach_sqr_*` quand plus rien ne les appelle
+
+À chaque étape, le jeu terminal reste jouable.
+
 ### 4.1 Le noyau
 
 Le changement central : passer de « valider un coup proposé » à
@@ -183,11 +276,13 @@ qui est une autre feature.
 Interface unique : `Engine.choose_move(position, level) -> Move`, deux
 implémentations derrière.
 
-1. **Maison** : minimax + élagage alpha-bêta + tri des coups + quiescence +
-   évaluation matériel/PST. ~300 lignes, profondeur 3-4 jouable en Python pur
-   si `apply()` ne fait pas de `deepcopy`. C'est l'option pédagogique.
-2. **Stockfish** en sous-processus UCI : fort, ~50 lignes, mais binaire externe
-   à installer.
+1. **Maison — retenu en premier** : minimax + élagage alpha-bêta + tri des
+   coups + quiescence + évaluation matériel/PST. ~300 lignes, profondeur 3-4
+   jouable en Python pur **à condition que `apply()` ne fasse pas de
+   `deepcopy`** (§4.0) — c'est la contrainte de perf qui compte vraiment ici.
+2. **Stockfish** en sous-processus UCI : fort, ~50 lignes, binaire externe à
+   installer. Branché plus tard derrière la même interface, surtout pour la
+   phase analyse.
 
 Stockfish sert aussi à l'analyse a posteriori — ce que le nom du dépôt promet.
 
@@ -212,6 +307,11 @@ s'il en reste exactement un, c'est celui-là. La désambiguïsation (`Nbd2`,
 - Réécrire `README.md` en UTF-8 (les notes de travail actuelles → `docs/`)
 
 ### Phase 1 — Noyau de règles (4-6 j) — *le gros morceau*
+
+Suit l'ordre de migration incrémentale du §4.0 : à chaque étape les tests
+restent verts et le jeu terminal jouable.
+
+- `pseudo_moves()` ajouté à chaque classe de pièce, à côté de `_is_valid_move`
 - `Position` immutable + FEN in/out
 - `legal_moves()` complet : roque, en passant, promotion (4 pièces)
 - Nulles : 50 coups, répétition triple (clé = FEN sans les compteurs),
@@ -274,13 +374,17 @@ comptes utilisateurs, classement Elo.
 
 ---
 
-## 7. Décisions ouvertes
+## 7. Décisions prises
 
-1. **Moteur maison ou `python-chess` ?** Recommandation : garder le moteur
-   maison (c'est l'intérêt du projet) et n'utiliser `python-chess` qu'en
-   oracle de test.
-2. **IA maison ou Stockfish ?** Recommandation : l'interface d'abord, minimax
-   maison ensuite (c'est là qu'est l'apprentissage), Stockfish en option.
-3. **Refonte du noyau ou correctifs incrémentaux ?** Recommandation : refonte.
-   Les bugs 1-3 du §3 et les blocages 1/3/4 du §2 ont la même cause racine ;
-   les corriger un par un coûte plus cher que de poser `legal_moves()`.
+| Sujet | Décision |
+|---|---|
+| **Noyau de règles** | Générateur `legal_moves()` (§4.0), migré **incrémentalement**. La bibliothèque de classes de pièces est conservée : chaque classe garde sa géométrie, elle produit ses destinations au lieu d'en juger une. |
+| **Bibliothèque externe** | Moteur maison. `python-chess` **uniquement en oracle de test** (comparaison de listes de coups légaux), jamais en dépendance de production. |
+| **IA** | Minimax maison en premier : alpha-bêta, tri des coups, quiescence, éval matériel/PST. Stockfish reste branchable plus tard derrière la même interface `Engine.choose_move()`, notamment pour la phase analyse. |
+| **Architecture** | Serveur FastAPI **autoritaire** sur les règles, y compris en 1v1 local. Le front ne calcule jamais la légalité : il demande les coups légaux à l'API. Une seule implémentation des règles, et le backend est de toute façon nécessaire pour l'IA et l'analyse. |
+
+### Reste à trancher plus tard
+- Rewind : ramener au présent (phase 3) puis variantes (phase 6) — confirmé au
+  moment de la phase 3.
+- Échiquier `react-chessboard` piloté par FEN, ou composant maison en CSS grid.
+- Cadences proposées par défaut (3+2, 5+0, 10+0, 15+10…).
