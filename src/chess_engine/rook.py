@@ -1,7 +1,8 @@
-from pieces import Piece
-from move_utility import MoveUtility
-
 from typing import TYPE_CHECKING
+
+from .move_utility import MoveUtility
+from .pieces import Piece
+
 if TYPE_CHECKING:
     from .chess_board import Board
 

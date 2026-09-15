@@ -1,31 +1,38 @@
 """Shared test helpers.
 
-The game modules use flat imports (``from chess_board import Board``), so we add
-``src/game_logic`` to ``sys.path`` here and let every test module import the
-pieces/board through this helper.
+The engine is installed as the ``chess_engine`` package (``pip install -e .``),
+so tests import it by name -- no ``sys.path`` juggling. Every test module pulls
+the pieces/board through this helper.
 
 Coordinate convention (matches the engine): board[row][col] with row 0 == rank 8
 (top) and row 7 == rank 1; col 0 == file 'a'.
 """
 
-import os
-import sys
-
-_SRC = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "src", "game_logic")
+from chess_engine import (
+    Bishop,
+    Board,
+    King,
+    Knight,
+    Pawn,
+    Piece,
+    Queen,
+    Rook,
+    chess_game,
 )
-if _SRC not in sys.path:
-    sys.path.insert(0, _SRC)
 
-from chess_board import Board          # noqa: E402
-from chess_game import chess_game      # noqa: E402
-from pieces import Piece               # noqa: E402
-from pawn import Pawn                  # noqa: E402
-from knight import Knight              # noqa: E402
-from bishop import Bishop              # noqa: E402
-from rook import Rook                  # noqa: E402
-from queen import Queen                # noqa: E402
-from king import King                  # noqa: E402
+__all__ = [
+    "Bishop",
+    "Board",
+    "King",
+    "Knight",
+    "Pawn",
+    "Piece",
+    "Queen",
+    "Rook",
+    "chess_game",
+    "empty_board",
+    "place",
+]
 
 
 def empty_board():

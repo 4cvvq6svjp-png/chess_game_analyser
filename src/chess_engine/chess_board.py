@@ -1,16 +1,13 @@
-from pieces import Piece
-from bishop import Bishop
-from knight import Knight
-from rook import Rook
-from queen import Queen
-from king import King
-from pawn import Pawn 
-from move_utility import MoveUtility
 from math import copysign
-
-
-
 from typing import TYPE_CHECKING
+
+from .bishop import Bishop
+from .king import King
+from .knight import Knight
+from .move_utility import MoveUtility
+from .pawn import Pawn
+from .queen import Queen
+from .rook import Rook
 
 if TYPE_CHECKING:
     from .pieces import Piece

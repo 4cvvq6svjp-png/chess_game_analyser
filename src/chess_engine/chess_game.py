@@ -1,19 +1,10 @@
-from chess_board import Board
-from player import Player
-from pieces import Piece
-
 # A move is a starting square and an ending one. Then we wil check if it could be played.
-# a move will be a input like this : "a1/a2", we check if the color id right with the number of turn 
+# a move will be a input like this : "a1/a2", we check if the color id right with the number of turn
 # it will be parsed and transformed to be 2 tuples, a start_square and an end_square
-from typing import TYPE_CHECKING
 from copy import deepcopy
 
-
-if TYPE_CHECKING:
-    from .pieces import Piece
-
-
-
+from .chess_board import Board
+from .player import Player
 
 
 class chess_game ():
