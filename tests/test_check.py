@@ -1,6 +1,6 @@
 import unittest
 
-from helpers import empty_board, place, King, Rook, Bishop, Knight, Pawn
+from helpers import Bishop, King, Knight, Pawn, Rook, empty_board, place
 
 
 class TestIsInCheck(unittest.TestCase):

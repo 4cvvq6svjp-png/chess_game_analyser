@@ -1,6 +1,6 @@
 import unittest
 
-from helpers import empty_board, place, Pawn
+from helpers import Pawn, empty_board, place
 
 
 class TestPawnMoves(unittest.TestCase):

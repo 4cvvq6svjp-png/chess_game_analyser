@@ -1,5 +1,6 @@
 from math import copysign
 
+
 class MoveUtility :
     DIRECTION = {"w": -1, "b": 1}
     first_rank = {"w":6, "b":1}
@@ -145,7 +146,6 @@ class MoveUtility :
     
     def reach_sqr_from_diags(BOARD, ROW, COL, color) :
         """Checks if a Bishop or Queen can reach the square(ROW, COL). Returns True if yes."""
-        m = MoveUtility.DIRECTION[color]
         directions = [[1,1], [1,-1], [-1,-1], [-1,1]]
         for dr, dc in directions :
             row = ROW

@@ -1,6 +1,6 @@
 import unittest
 
-from helpers import empty_board, place, Rook, Bishop, Queen, Pawn
+from helpers import Bishop, Pawn, Queen, Rook, empty_board, place
 
 
 class TestRook(unittest.TestCase):

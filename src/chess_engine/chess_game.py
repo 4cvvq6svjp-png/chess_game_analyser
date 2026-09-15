@@ -7,7 +7,7 @@ from .chess_board import Board
 from .player import Player
 
 
-class chess_game ():
+class chess_game :
     COLOR = ["w", "b"]
 
 
@@ -133,7 +133,7 @@ class chess_game ():
         if self.checkmate :
             print(f"The player : {curr_player.color} won.")
         elif self.stalemate :
-            print(f"This is a STALEMATE")
+            print("This is a STALEMATE")
         elif self.pat :
             print("This is a PAT")
                 

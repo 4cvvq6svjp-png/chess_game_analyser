@@ -19,7 +19,7 @@ class Board :
 
     def __init__(self, key):
         self.play_stack = []
-        self.chessboard: list[list['Piece']] = self.init_board(key)
+        self.chessboard: list[list[Piece]] = self.init_board(key)
         # TODO - history of moves when going through the different variations
         self.explored_history = {}
 

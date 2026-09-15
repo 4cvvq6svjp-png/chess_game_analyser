@@ -1,6 +1,6 @@
 import unittest
 
-from helpers import empty_board, place, King, Rook, Pawn
+from helpers import King, Pawn, Rook, empty_board, place
 
 
 def is_mate(board, color):

@@ -1,6 +1,6 @@
 import unittest
 
-from helpers import empty_board, place, Knight, Pawn
+from helpers import Knight, Pawn, empty_board, place
 
 
 class TestKnight(unittest.TestCase):

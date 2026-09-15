@@ -15,5 +15,5 @@ class Player :
     def tell_a_piece(self):
         """function to be used when a pawn reaches the back rank and therefore needs
             to be changed"""
-        p = input(f"Which piece you want your pawn to become ?")
+        p = input("Which piece you want your pawn to become ?")
         return p

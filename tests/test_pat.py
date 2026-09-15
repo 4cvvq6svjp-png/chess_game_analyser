@@ -1,6 +1,6 @@
 import unittest
 
-from helpers import empty_board, place, King, Queen
+from helpers import King, Queen, empty_board, place
 
 
 class TestPat(unittest.TestCase):
