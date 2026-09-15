@@ -54,10 +54,10 @@ class Board :
 
         if    not  (MoveUtility.check_diags(BOARD, row, col, attacker.color)["check"]\
                 and MoveUtility.check_lines(BOARD, row, col, attacker.color)["check"]\
-                and MoveUtility.check_horses(BOARD, row, col, attacker.color)["check"]):
+                and MoveUtility.check_knights(BOARD, row, col, attacker.color)["check"]):
             return False
-        # if not a horse/pawn --> can we block it ?
-        if attacker.name in ["horse", "pawn"] : return True
+        # if not a knight/pawn --> can we block it ?
+        if attacker.name in ["knight", "pawn"] : return True
 
         inbetween_square = []
         while abs(row - r)>1 or abs(col - c)>1 :
@@ -69,7 +69,7 @@ class Board :
             if (MoveUtility.reach_sqr_from_lines(BOARD, dr, dc, color_of_king)\
                 or MoveUtility.reach_sqr_from_diags(BOARD, dr, dc, color_of_king)\
                 or MoveUtility.reach_sqr_with_pawn(BOARD, dr, dc, color_of_king)
-                or MoveUtility.reach_sqr_with_horse(BOARD, dr, dc, color_of_king)):
+                or MoveUtility.reach_sqr_with_knight(BOARD, dr, dc, color_of_king)):
                 return False
         return True
 
@@ -91,7 +91,7 @@ class Board :
         # let's locate the checks
         checkS = [MoveUtility.check_diags(BOARD, r, c, color_of_king),
                   MoveUtility.check_lines(BOARD, r, c, color_of_king),
-                  MoveUtility.check_horses(BOARD, r, c, color_of_king)]
+                  MoveUtility.check_knights(BOARD, r, c, color_of_king)]
         possible_check = [elt["check"] for elt in checkS]
         
         trues = possible_check.count(True)

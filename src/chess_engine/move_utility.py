@@ -107,12 +107,12 @@ class MoveUtility :
         return {"check":True, "square_attacker":(-1,-1)}
     
 
-    def check_horses(BOARD, ROW, COL, color) :
-        """Returns False if the square is threatened by a horse and tells where is the attacker. True if not."""
-        horse_square = [[2,1], [2,-1], [-2,1], [-2,-1], [1,2], [-1,2], [1,-2], [-1,-2]]
-        for dr, dc in horse_square:
+    def check_knights(BOARD, ROW, COL, color) :
+        """Returns False if the square is threatened by a knight and tells where is the attacker. True if not."""
+        knight_squares = [[2,1], [2,-1], [-2,1], [-2,-1], [1,2], [-1,2], [1,-2], [-1,-2]]
+        for dr, dc in knight_squares:
             if (ROW+dr in range(8)) and (COL+dc in range(8)) and (BOARD[ROW+dr][COL+dc] is not None)\
-            and BOARD[ROW+dr][COL+dc].name == "horse" and BOARD[ROW+dr][COL+dc].color != color:
+            and BOARD[ROW+dr][COL+dc].name == "knight" and BOARD[ROW+dr][COL+dc].color != color:
                 return {"check":False, "square_attacker":(ROW+dr,COL+dc)}
         return {"check":True, "square_attacker":(-1,-1)}
     
@@ -176,12 +176,12 @@ class MoveUtility :
         return False
 
 
-    def reach_sqr_with_horse(BOARD, ROW, COL, color):
-        """Returns True if a horse of 'color' can reach the square."""
-        horse_square = [[2,1], [2,-1], [-2,1], [-2,-1], [1,2], [-1,2], [1,-2], [-1,-2]]
-        for dr, dc in horse_square:
+    def reach_sqr_with_knight(BOARD, ROW, COL, color):
+        """Returns True if a knight of 'color' can reach the square."""
+        knight_squares = [[2,1], [2,-1], [-2,1], [-2,-1], [1,2], [-1,2], [1,-2], [-1,-2]]
+        for dr, dc in knight_squares:
             if (ROW+dr in range(8)) and (COL+dc in range(8)) and (BOARD[ROW+dr][COL+dc] is not None)\
-            and BOARD[ROW+dr][COL+dc].name == "horse" and BOARD[ROW+dr][COL+dc].color == color:
+            and BOARD[ROW+dr][COL+dc].name == "knight" and BOARD[ROW+dr][COL+dc].color == color:
                 return True
         return False
 

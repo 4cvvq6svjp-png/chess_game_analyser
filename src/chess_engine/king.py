@@ -28,7 +28,7 @@ class King(Piece):
 
         return   MoveUtility.check_diags(BOARD, rowTO, colTO, self.color)["check"]\
              and MoveUtility.check_lines(BOARD, rowTO, colTO, self.color)["check"]\
-             and MoveUtility.check_horses(BOARD, rowTO, colTO, self.color)["check"]
+             and MoveUtility.check_knights(BOARD, rowTO, colTO, self.color)["check"]
 
 
 

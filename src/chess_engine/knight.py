@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 class Knight (Piece) :
     def __init__(self, color) :
-        super().__init__(color, "horse")
+        super().__init__(color, "knight")
 
     
     def _is_valid_move(self, square_from: tuple, square_to: tuple, board: 'Board'):
@@ -38,8 +38,8 @@ class Knight (Piece) :
 
     def _can_move(self, board, square):
         ROW, COL = square
-        horse_square = [[2,1], [2,-1], [-2,1], [-2,-1], [1,2], [-1,2], [1,-2], [-1,-2]]
-        for dr, dc in horse_square:
+        knight_squares = [[2,1], [2,-1], [-2,1], [-2,-1], [1,2], [-1,2], [1,-2], [-1,-2]]
+        for dr, dc in knight_squares:
             if ROW+dr in range(8) and COL+dc in range(8) and self._is_valid_move(square, (ROW+dr, COL+dc), board):
                 return True
         return False
