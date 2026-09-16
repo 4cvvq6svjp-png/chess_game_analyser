@@ -60,6 +60,16 @@ class Piece(ABC):
             yield Move(square, landing)
 
     @abstractmethod
+    def pseudo_moves(self, position: 'GamePosition', square: tuple) -> 'Iterator[Move]':
+        """Produit les coups de la pièce depuis ``square``.
+
+        « Pseudo » : la géométrie et les obstacles sont pris en compte, la
+        légalité vis-à-vis du roi ne l'est pas. Toute pièce doit savoir
+        répondre, car ``GamePosition.legal_moves()`` interrogera les six de la
+        même façon, sans savoir laquelle elle tient.
+        """
+
+    @abstractmethod
     def _is_valid_move(self, square_from, square_to, BOARD):
         pass
     
