@@ -1,15 +1,26 @@
 from typing import TYPE_CHECKING
 
 from .move_utility import MoveUtility
-from .pieces import Piece
+from .pieces import DIAGONAL_DIRECTIONS, Piece
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from .chess_board import Board
+    from .game_position import GamePosition
+    from .move import Move
 
 
 class Bishop (Piece):
+    #: Le fou ne connaît que les diagonales.
+    DIRECTIONS = DIAGONAL_DIRECTIONS
+
     def __init__(self, color) :
         super().__init__(color, "bishop")
+
+    def pseudo_moves(self, position: 'GamePosition', square: tuple) -> 'Iterator[Move]':
+        """Produit les coups du fou depuis ``square``, sans filtre de légalité."""
+        return self._sliding_moves(position, square, self.DIRECTIONS)
 
     def _is_valid_move(self, square_from: tuple, square_to: tuple, board: 'Board'):
         return MoveUtility._is_diag_valid(square_from, square_to, board.chessboard)
@@ -26,8 +37,7 @@ class Bishop (Piece):
 
     def _can_move(self, board, square):
         ROW, COL = square
-        directions = [[1,1], [1,-1], [-1,-1], [-1,1]]
-        for dr, dc in directions:
+        for dr, dc in self.DIRECTIONS:
             if ROW+dr in range(8) and COL+dc in range(8) and self._is_valid_move(square, (ROW+dr, COL+dc), board):
                 return True
         return False
