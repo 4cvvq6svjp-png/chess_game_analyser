@@ -153,11 +153,10 @@ class TestFenFeedsTheGenerator(unittest.TestCase):
         self.assertEqual(len(position.legal_moves()), 20)
 
     def test_kiwipete_parses_and_generates(self):
-        """46 aujourd'hui, 48 quand le roque existera : l'écart est les deux roques."""
         position = GamePosition.from_fen(KIWIPETE)
         self.assertEqual(position.side_to_move, "w")
         self.assertEqual(position.castling_rights, frozenset("KQkq"))
-        self.assertEqual(len(position.legal_moves()), 46)
+        self.assertEqual(len(position.legal_moves()), 48)
 
 
 if __name__ == "__main__":

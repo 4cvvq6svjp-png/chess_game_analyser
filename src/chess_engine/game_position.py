@@ -14,20 +14,21 @@ l'exploration d'arbre triviaux : rien n'est jamais annulé.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 from .bishop import Bishop
 from .king import King
 from .knight import Knight
-from .move import square_from_name, square_name
+from .move import Move, square_from_name, square_name
 from .move_utility import MoveUtility
 from .pawn import Pawn
 from .queen import Queen
 from .rook import Rook
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from .chess_board import Board
-    from .move import Move
     from .pieces import Piece
 
 #: Tous les droits de roque, comme le ``KQkq`` d'une FEN.
@@ -56,11 +57,66 @@ PROMOTION_PIECES = {"queen": Queen, "rook": Rook, "bishop": Bishop, "knight": Kn
 #: Le droit de roque que chaque coin fait perdre, que la tour le quitte ou
 #: qu'elle s'y fasse prendre.
 ROOK_HOME_SQUARES = {
-    (7, 0): frozenset("Q"),
-    (7, 7): frozenset("K"),
-    (0, 0): frozenset("q"),
-    (0, 7): frozenset("k"),
+    square_from_name("a1"): frozenset("Q"),
+    square_from_name("h1"): frozenset("K"),
+    square_from_name("a8"): frozenset("q"),
+    square_from_name("h8"): frozenset("k"),
 }
+
+
+class Castling(NamedTuple):
+    """Le parcours d'un roque, et ses deux conditions de case.
+
+    ``must_be_empty`` et ``must_be_safe`` ne se recouvrent pas : au grand
+    roque, la case b1 doit être libre alors que le roi ne la traverse pas,
+    et e1 doit être sûre -- on ne roque pas en étant en échec -- alors qu'elle
+    n'a pas à être vide, le roi s'y trouvant.
+    """
+
+    king_from: tuple[int, int]
+    king_to: tuple[int, int]
+    rook_from: tuple[int, int]
+    rook_to: tuple[int, int]
+    must_be_empty: tuple[tuple[int, int], ...]
+    must_be_safe: tuple[tuple[int, int], ...]
+
+
+#: Les quatre roques, indexés par la lettre que leur donne la FEN.
+CASTLINGS = {
+    "K": Castling(
+        square_from_name("e1"), square_from_name("g1"),
+        square_from_name("h1"), square_from_name("f1"),
+        must_be_empty=(square_from_name("f1"), square_from_name("g1")),
+        must_be_safe=(square_from_name("e1"), square_from_name("f1"),
+                      square_from_name("g1")),
+    ),
+    "Q": Castling(
+        square_from_name("e1"), square_from_name("c1"),
+        square_from_name("a1"), square_from_name("d1"),
+        must_be_empty=(square_from_name("b1"), square_from_name("c1"),
+                       square_from_name("d1")),
+        must_be_safe=(square_from_name("e1"), square_from_name("d1"),
+                      square_from_name("c1")),
+    ),
+    "k": Castling(
+        square_from_name("e8"), square_from_name("g8"),
+        square_from_name("h8"), square_from_name("f8"),
+        must_be_empty=(square_from_name("f8"), square_from_name("g8")),
+        must_be_safe=(square_from_name("e8"), square_from_name("f8"),
+                      square_from_name("g8")),
+    ),
+    "q": Castling(
+        square_from_name("e8"), square_from_name("c8"),
+        square_from_name("a8"), square_from_name("d8"),
+        must_be_empty=(square_from_name("b8"), square_from_name("c8"),
+                       square_from_name("d8")),
+        must_be_safe=(square_from_name("e8"), square_from_name("d8"),
+                      square_from_name("c8")),
+    ),
+}
+
+#: Les droits que chaque camp peut encore exercer.
+CASTLING_RIGHTS_BY_COLOR = {"w": ("K", "Q"), "b": ("k", "q")}
 
 
 @dataclass(frozen=True, slots=True)
@@ -97,11 +153,12 @@ class GamePosition:
                     return (row, col)
         return None
 
-    def is_in_check(self, color: str) -> bool:
-        """Le roi de ``color`` est-il attaqué dans cette position ?"""
-        square = self.find_king(color)
-        if square is None:
-            return False
+    def is_attacked(self, square: tuple[int, int], color: str) -> bool:
+        """La case est-elle attaquée par l'adversaire de ``color`` ?
+
+        Utile au-delà de l'échec : le roque exige que trois cases soient sûres,
+        dont deux qui ne portent pas le roi.
+        """
         row, col = square
         # Les check_* de MoveUtility répondent à l'envers : "check": False
         # signifie que la case *est* attaquée.
@@ -110,6 +167,11 @@ class GamePosition:
             and MoveUtility.check_lines(self.board, row, col, color)["check"]
             and MoveUtility.check_knights(self.board, row, col, color)["check"]
         )
+
+    def is_in_check(self, color: str) -> bool:
+        """Le roi de ``color`` est-il attaqué dans cette position ?"""
+        square = self.find_king(color)
+        return False if square is None else self.is_attacked(square, color)
 
     def legal_moves(self) -> list[Move]:
         """Tous les coups jouables par le camp au trait.
@@ -121,19 +183,56 @@ class GamePosition:
         long de la ligne qui l'attaque, puisque ``apply`` a vidé sa case de
         départ avant l'évaluation.
 
-        Le roque n'est pas encore produit : il viendra ici même, en lisant
-        ``castling_rights``.
+        Le roque est produit ici et non par une pièce : il en déplace deux, et
+        ses conditions tiennent à la position -- les droits restants et la
+        sûreté des cases traversées.
         """
         moves = []
-        for row in range(8):
-            for col in range(8):
-                piece = self.board[row][col]
-                if piece is None or piece.color != self.side_to_move:
-                    continue
-                for move in piece.pseudo_moves(self, (row, col)):
-                    if not self.apply(move).is_in_check(self.side_to_move):
-                        moves.append(move)
+        candidates = (
+            (piece, (row, col))
+            for row in range(8)
+            for col in range(8)
+            if (piece := self.board[row][col]) is not None
+            and piece.color == self.side_to_move
+        )
+        for piece, square in candidates:
+            for move in piece.pseudo_moves(self, square):
+                if not self.apply(move).is_in_check(self.side_to_move):
+                    moves.append(move)
+
+        for move in self._castling_moves():
+            if not self.apply(move).is_in_check(self.side_to_move):
+                moves.append(move)
         return moves
+
+    def _castling_moves(self) -> Iterator[Move]:
+        """Les roques encore possibles pour le camp au trait.
+
+        Le coup est représenté par le seul déplacement du roi, de deux cases --
+        la notation qu'emploient l'UCI et la plupart des moteurs. ``apply``
+        reconnaît ce saut et déplace la tour avec lui.
+        """
+        for right in CASTLING_RIGHTS_BY_COLOR[self.side_to_move]:
+            if right not in self.castling_rights:
+                continue
+            plan = CASTLINGS[right]
+
+            # Une FEN peut annoncer un droit sans les pièces qui vont avec.
+            king = self.piece_at(plan.king_from)
+            rook = self.piece_at(plan.rook_from)
+            if king is None or king.name != "king" or king.color != self.side_to_move:
+                continue
+            if rook is None or rook.name != "rook" or rook.color != self.side_to_move:
+                continue
+
+            if any(self.piece_at(square) is not None for square in plan.must_be_empty):
+                continue
+            if any(
+                self.is_attacked(square, self.side_to_move)
+                for square in plan.must_be_safe
+            ):
+                continue
+            yield Move(plan.king_from, plan.king_to)
 
     def apply(self, move: Move) -> GamePosition:
         """Joue ``move`` et renvoie la position qui en résulte.
@@ -160,6 +259,12 @@ class GamePosition:
             victim_row = row_to - Pawn.DIRECTION[piece.color]
             captured = grid[victim_row][col_to]
             grid[victim_row][col_to] = None
+
+        # Roque : le saut de deux cases du roi entraîne la tour avec lui.
+        if piece.name == "king" and abs(col_to - col_from) == 2:
+            rook_from_col, rook_to_col = (7, 5) if col_to > col_from else (0, 3)
+            grid[row_from][rook_to_col] = grid[row_from][rook_from_col]
+            grid[row_from][rook_from_col] = None
 
         if move.promotion is not None:
             grid[row_to][col_to] = PROMOTION_PIECES[move.promotion](piece.color)
