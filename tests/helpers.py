@@ -11,20 +11,25 @@ Coordinate convention (matches the engine): board[row][col] with row 0 == rank 8
 from chess_engine import (
     Bishop,
     Board,
+    GamePosition,
     King,
     Knight,
+    Move,
     Pawn,
     Piece,
     Queen,
     Rook,
     chess_game,
+    square_name,
 )
 
 __all__ = [
     "Bishop",
     "Board",
+    "GamePosition",
     "King",
     "Knight",
+    "Move",
     "Pawn",
     "Piece",
     "Queen",
@@ -32,6 +37,7 @@ __all__ = [
     "chess_game",
     "empty_board",
     "place",
+    "square_name",
 ]
 
 
