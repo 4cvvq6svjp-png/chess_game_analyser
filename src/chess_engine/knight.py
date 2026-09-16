@@ -26,15 +26,7 @@ class Knight (Piece) :
         ``GamePosition.legal_moves()`` qui écrira ce filtre -- une seule fois,
         pour toutes les pièces, au lieu de le réinventer dans chacune.
         """
-        row, col = square
-        for dr, dc in self.OFFSETS:
-            landing = (row + dr, col + dc)
-            if not (0 <= landing[0] < 8 and 0 <= landing[1] < 8):
-                continue
-            target = position.piece_at(landing)
-            if target is not None and target.color == self.color:
-                continue
-            yield Move(square, landing)
+        return self._stepping_moves(position, square, self.OFFSETS)
 
 
     def _is_valid_move(self, square_from: tuple, square_to: tuple, board: 'Board'):
