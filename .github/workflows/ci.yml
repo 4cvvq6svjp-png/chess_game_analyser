@@ -28,4 +28,8 @@ jobs:
         run: ruff check .
 
       - name: Tests
+        # CHESS_SLOW_TESTS active perft(4) -- 197 281 noeuds, quelques
+        # secondes : trop lent pour la boucle locale, indispensable ici.
+        env:
+          CHESS_SLOW_TESTS: "1"
         run: python -m unittest discover -s tests -p "test_*.py" -v
