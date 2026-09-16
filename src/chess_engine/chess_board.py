@@ -126,6 +126,18 @@ class Board :
         return True
 
     
+    #: Lettre d'affichage de chaque pièce. Le cavalier prend N, comme en
+    #: notation algébrique : le K est déjà pris par le roi, et une initiale
+    #: suffisait tant que la pièce s'appelait "horse".
+    LETTERS = {
+        "king": "K",
+        "queen": "Q",
+        "rook": "R",
+        "bishop": "B",
+        "knight": "N",
+        "pawn": "P",
+    }
+
     def display_board(self):
         """To display the board in the terminal"""
         for row in range(8) :
@@ -133,8 +145,8 @@ class Board :
             for col in range(8) :
                 if self.chessboard[row][col] is not None:
                     p = self.chessboard[row][col]
-                    name = p.name[0].upper() if p.color == "w" else p.name[0]
-                    line.append(name)
+                    letter = Board.LETTERS[p.name]
+                    line.append(letter if p.color == "w" else letter.lower())
                     line.append("|")
                 else:
                     line.append(" ")
