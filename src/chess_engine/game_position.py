@@ -17,7 +17,9 @@ from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
 from .bishop import Bishop
+from .king import King
 from .knight import Knight
+from .move import square_from_name, square_name
 from .move_utility import MoveUtility
 from .pawn import Pawn
 from .queen import Queen
@@ -30,6 +32,23 @@ if TYPE_CHECKING:
 
 #: Tous les droits de roque, comme le ``KQkq`` d'une FEN.
 ALL_CASTLING_RIGHTS = frozenset("KQkq")
+
+#: La lettre de chaque pièce, telle que l'écrivent la FEN et la notation
+#: algébrique : majuscule pour les blancs, minuscule pour les noirs. Le
+#: cavalier prend N, le K étant celui du roi. Source unique -- l'affichage
+#: terminal et l'export FEN lisent la même table.
+PIECE_CLASSES_BY_LETTER = {
+    "k": King,
+    "q": Queen,
+    "r": Rook,
+    "b": Bishop,
+    "n": Knight,
+    "p": Pawn,
+}
+LETTERS_BY_NAME = {
+    piece_class("w").name: letter.upper()
+    for letter, piece_class in PIECE_CLASSES_BY_LETTER.items()
+}
 
 #: Ce qu'un pion peut devenir. Les noms sont ceux que porte ``Move.promotion``.
 PROMOTION_PIECES = {"queen": Queen, "rook": Rook, "bishop": Bishop, "knight": Knight}
@@ -200,6 +219,95 @@ class GamePosition:
             side_to_move=side_to_move,
             castling_rights=castling_rights,
             en_passant_square=_en_passant_square(board),
+        )
+
+    def to_fen(self) -> str:
+        """La position écrite en FEN.
+
+        Les six champs de la notation sont les six champs de cette classe, dans
+        l'ordre : placement, trait, droits de roque, case d'en passant, demi-coups
+        depuis la dernière prise ou poussée, numéro du coup.
+        """
+        ranks = []
+        for row in self.board:
+            text = ""
+            empty = 0
+            for piece in row:
+                if piece is None:
+                    empty += 1
+                    continue
+                if empty:
+                    text += str(empty)
+                    empty = 0
+                letter = LETTERS_BY_NAME[piece.name]
+                text += letter if piece.color == "w" else letter.lower()
+            if empty:
+                text += str(empty)
+            ranks.append(text)
+
+        castling = "".join(right for right in "KQkq" if right in self.castling_rights)
+        en_passant = (
+            square_name(self.en_passant_square) if self.en_passant_square else "-"
+        )
+        return " ".join([
+            "/".join(ranks),
+            self.side_to_move,
+            castling or "-",
+            en_passant,
+            str(self.halfmove_clock),
+            str(self.fullmove_number),
+        ])
+
+    @classmethod
+    def from_fen(cls, fen: str) -> GamePosition:
+        """Construit une position depuis une FEN.
+
+        Les deux compteurs finaux sont facultatifs : beaucoup de positions de
+        test publiées s'arrêtent après la case d'en passant. Ils valent alors
+        0 et 1, ce qui ne change rien au calcul des coups.
+        """
+        fields = fen.split()
+        if len(fields) < 4:
+            raise ValueError(f"FEN incomplète, 4 champs au minimum : {fen!r}")
+
+        placement, side_to_move, castling, en_passant = fields[:4]
+        if side_to_move not in ("w", "b"):
+            raise ValueError(f"trait invalide : {side_to_move!r}")
+
+        rows = placement.split("/")
+        if len(rows) != 8:
+            raise ValueError(f"placement : 8 rangées attendues, {len(rows)} reçues")
+
+        board = []
+        for index, text in enumerate(rows):
+            row = []
+            for character in text:
+                if character.isdigit():
+                    row.extend([None] * int(character))
+                    continue
+                piece_class = PIECE_CLASSES_BY_LETTER.get(character.lower())
+                if piece_class is None:
+                    raise ValueError(f"pièce inconnue dans la FEN : {character!r}")
+                row.append(piece_class("w" if character.isupper() else "b"))
+            if len(row) != 8:
+                raise ValueError(
+                    f"rangée {8 - index} : 8 cases attendues, {len(row)} décrites"
+                )
+            board.append(tuple(row))
+
+        unknown = set(castling) - set("KQkq-")
+        if unknown:
+            raise ValueError(f"droits de roque invalides : {sorted(unknown)}")
+
+        return cls(
+            board=tuple(board),
+            side_to_move=side_to_move,
+            castling_rights=frozenset(castling) - {"-"},
+            en_passant_square=(
+                None if en_passant == "-" else square_from_name(en_passant)
+            ),
+            halfmove_clock=int(fields[4]) if len(fields) > 4 else 0,
+            fullmove_number=int(fields[5]) if len(fields) > 5 else 1,
         )
 
 

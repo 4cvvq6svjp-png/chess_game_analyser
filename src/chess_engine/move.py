@@ -19,6 +19,21 @@ def square_name(square: tuple[int, int]) -> str:
     return f"{chr(ord('a') + col)}{8 - row}"
 
 
+def square_from_name(name: str) -> tuple[int, int]:
+    """``"e2"`` -> ``(6, 4)``. Inverse de ``square_name``.
+
+    Lève ``ValueError`` sur une case impossible : c'est le point d'entrée des
+    notations écrites par quelqu'un d'autre -- une FEN, un PGN, une requête
+    d'API -- donc l'endroit où refuser une saisie fausse.
+    """
+    if len(name) != 2:
+        raise ValueError(f"case invalide : {name!r}")
+    file_, rank = name[0], name[1]
+    if not ("a" <= file_ <= "h" and "1" <= rank <= "8"):
+        raise ValueError(f"case hors échiquier : {name!r}")
+    return (8 - int(rank), ord(file_) - ord("a"))
+
+
 @dataclass(frozen=True, slots=True)
 class Move:
     """Un demi-coup : d'où, vers où, et en quoi le pion se transforme.

@@ -20,6 +20,7 @@ from chess_engine import (
     Queen,
     Rook,
     chess_game,
+    square_from_name,
     square_name,
 )
 
@@ -42,14 +43,10 @@ __all__ = [
 ]
 
 
-def square(name):
-    """``"e2"`` -> ``(6, 4)``. L'inverse de ``square_name``.
-
-    Écrire les cases en notation d'échecs plutôt qu'en coordonnées rend les
-    tests relisibles : ``square("e4")`` se vérifie d'un coup d'œil, ``(4, 4)``
-    demande une conversion mentale à chaque lecture.
-    """
-    return (8 - int(name[1]), ord(name[0]) - ord("a"))
+#: ``square("e2")`` -> ``(6, 4)``. Écrire les cases en notation d'échecs rend
+#: les tests relisibles : ``square("e4")`` se vérifie d'un coup d'œil, ``(4, 4)``
+#: demande une conversion mentale. C'est la fonction du moteur, pas une copie.
+square = square_from_name
 
 
 def empty_board():

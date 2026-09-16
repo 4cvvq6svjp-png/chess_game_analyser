@@ -2,6 +2,7 @@ from math import copysign
 from typing import TYPE_CHECKING
 
 from .bishop import Bishop
+from .game_position import LETTERS_BY_NAME
 from .king import King
 from .knight import Knight
 from .move_utility import MoveUtility
@@ -126,17 +127,9 @@ class Board :
         return True
 
     
-    #: Lettre d'affichage de chaque pièce. Le cavalier prend N, comme en
-    #: notation algébrique : le K est déjà pris par le roi, et une initiale
-    #: suffisait tant que la pièce s'appelait "horse".
-    LETTERS = {
-        "king": "K",
-        "queen": "Q",
-        "rook": "R",
-        "bishop": "B",
-        "knight": "N",
-        "pawn": "P",
-    }
+    #: Lettre d'affichage de chaque pièce -- la même que celle de la FEN, d'où
+    #: la table partagée plutôt qu'une copie : les deux ne peuvent pas diverger.
+    LETTERS = LETTERS_BY_NAME
 
     def display_board(self):
         """To display the board in the terminal"""
