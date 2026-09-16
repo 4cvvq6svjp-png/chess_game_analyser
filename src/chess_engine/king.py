@@ -1,17 +1,43 @@
 from typing import TYPE_CHECKING
 
 from .move_utility import MoveUtility
-from .pieces import Piece
+from .pieces import ALL_DIRECTIONS, Piece
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from .chess_board import Board
+    from .game_position import GamePosition
+    from .move import Move
 
 
 class King(Piece):
+    #: Le roi va dans les huit directions, mais d'un seul pas.
+    DIRECTIONS = ALL_DIRECTIONS
 
     def __init__(self, color) :
         super().__init__(color, "king")
 
+
+    def pseudo_moves(self, position: 'GamePosition', square: tuple) -> 'Iterator[Move]':
+        """Produit les huit pas du roi depuis ``square``, sans filtre de légalité.
+
+        C'est la seule pièce dont le générateur et ``_is_valid_move`` ne
+        décrivent pas le même ensemble : le validateur refuse déjà les cases
+        attaquées (il appelle ``check_diags``/``check_lines``/``check_knights``
+        sur l'arrivée), ce qui est un jugement de légalité et non de géométrie.
+        Le générateur produit donc un sur-ensemble, et le filtre sera appliqué
+        une seule fois, dans ``GamePosition.legal_moves()``.
+
+        Ce déplacement du filtre n'est pas cosmétique : évalué depuis la case
+        d'arrivée alors que le roi occupe encore son ancienne case, le
+        validateur ne voit pas les attaques qui passent à travers elle -- le
+        bug « king-shadow » de la section 3 du roadmap.
+
+        Le roque n'est pas produit ici : il déplace deux pièces et dépend des
+        droits portés par la position.
+        """
+        return self._stepping_moves(position, square, self.DIRECTIONS)
 
 
     def _is_valid_move(self, square_from: tuple, square_to: tuple, board: 'Board'):
@@ -43,8 +69,7 @@ class King(Piece):
 
     def _can_move(self, board, square):
         ROW, COL = square
-        directions = [[0,1], [1,0], [0,-1], [-1,0], [1,1], [1,-1], [-1,-1], [-1,1]]
-        for dr, dc in directions:
+        for dr, dc in self.DIRECTIONS:
             if ROW+dr in range(8) and COL+dc in range(8) and self._is_valid_move(square, (ROW+dr, COL+dc), board):
                 return True
         return False
