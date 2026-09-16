@@ -37,8 +37,19 @@ __all__ = [
     "chess_game",
     "empty_board",
     "place",
+    "square",
     "square_name",
 ]
+
+
+def square(name):
+    """``"e2"`` -> ``(6, 4)``. L'inverse de ``square_name``.
+
+    Écrire les cases en notation d'échecs plutôt qu'en coordonnées rend les
+    tests relisibles : ``square("e4")`` se vérifie d'un coup d'œil, ``(4, 4)``
+    demande une conversion mentale à chaque lecture.
+    """
+    return (8 - int(name[1]), ord(name[0]) - ord("a"))
 
 
 def empty_board():
