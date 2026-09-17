@@ -14,6 +14,7 @@ l'exploration d'arbre triviaux : rien n'est jamais annulé.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from enum import Enum
 from typing import TYPE_CHECKING, NamedTuple
 
 from .bishop import Bishop
@@ -117,6 +118,35 @@ CASTLINGS = {
 
 #: Les droits que chaque camp peut encore exercer.
 CASTLING_RIGHTS_BY_COLOR = {"w": ("K", "Q"), "b": ("k", "q")}
+
+#: Au-delà de ce nombre de demi-coups sans prise ni poussée de pion, la partie
+#: est nulle : cinquante coups de chaque camp.
+FIFTY_MOVE_PLIES = 100
+
+
+class Status(str, Enum):
+    """L'état d'une partie.
+
+    Hérite de ``str`` pour rester sérialisable tel quel -- l'API renverra ces
+    valeurs sans conversion.
+
+    ``REPETITION`` ne peut pas venir d'une position seule : il faut l'histoire
+    qui y mène. C'est ``Game`` qui le produit, à partir de
+    ``repetition_key``.
+    """
+
+    ONGOING = "ongoing"
+    CHECKMATE = "checkmate"
+    STALEMATE = "stalemate"
+    FIFTY_MOVE = "fifty_move"
+    REPETITION = "repetition"
+    INSUFFICIENT_MATERIAL = "insufficient_material"
+
+    def is_over(self) -> bool:
+        return self is not Status.ONGOING
+
+    def is_draw(self) -> bool:
+        return self not in (Status.ONGOING, Status.CHECKMATE)
 
 
 @dataclass(frozen=True, slots=True)
@@ -233,6 +263,66 @@ class GamePosition:
             ):
                 continue
             yield Move(plan.king_from, plan.king_to)
+
+    def status(self) -> Status:
+        """Le verdict que cette position permet de rendre, à elle seule.
+
+        L'ordre compte : un mat reste un mat même au centième demi-coup sans
+        prise. Les fins par absence de coup passent donc avant les nulles de
+        compteur.
+
+        La répétition manque, et c'est volontaire : elle dépend du chemin
+        parcouru, pas de la position. ``Game.status()`` la rajoute.
+        """
+        if not self.legal_moves():
+            return (
+                Status.CHECKMATE
+                if self.is_in_check(self.side_to_move)
+                else Status.STALEMATE
+            )
+        if self.has_insufficient_material():
+            return Status.INSUFFICIENT_MATERIAL
+        if self.halfmove_clock >= FIFTY_MOVE_PLIES:
+            return Status.FIFTY_MOVE
+        return Status.ONGOING
+
+    def repetition_key(self) -> str:
+        """Ce qui fait qu'une position « est la même » qu'une autre.
+
+        La FEN privée de ses deux compteurs : le placement, le trait, les
+        droits de roque et la case d'en passant. Deux positions identiques
+        atteintes par des chemins différents donnent la même clé, et c'est ce
+        que compte la règle de la triple répétition.
+        """
+        return " ".join(self.to_fen().split()[:4])
+
+    def has_insufficient_material(self) -> bool:
+        """Aucun des deux camps ne peut mater, même avec la coopération de l'autre.
+
+        C'est la « position morte » de la FIDE, et elle est plus étroite qu'on
+        ne le croit : roi contre roi, roi et pièce mineure contre roi, et deux
+        fous sur des cases de même couleur. Deux cavaliers contre un roi n'en
+        font pas partie -- le mat n'y est pas forçable, mais il reste
+        atteignable, et la règle parle de possibilité, pas de contrainte.
+        """
+        minors = {"w": [], "b": []}
+        for row in range(8):
+            for col in range(8):
+                piece = self.board[row][col]
+                if piece is None or piece.name == "king":
+                    continue
+                if piece.name in ("pawn", "rook", "queen"):
+                    return False
+                minors[piece.color].append((piece, (row, col)))
+
+        white, black = minors["w"], minors["b"]
+        if len(white) + len(black) <= 1:
+            return True  # roi contre roi, ou roi et une mineure contre roi
+        if len(white) == 1 and len(black) == 1:
+            (white_piece, white_square), (black_piece, black_square) = white[0], black[0]
+            if white_piece.name == "bishop" and black_piece.name == "bishop":
+                return sum(white_square) % 2 == sum(black_square) % 2
+        return False
 
     def apply(self, move: Move) -> GamePosition:
         """Joue ``move`` et renvoie la position qui en résulte.
