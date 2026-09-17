@@ -9,7 +9,8 @@ par imports relatifs ; les consommateurs (tests, API, IA) passent par ici :
 from .bishop import Bishop
 from .chess_board import Board
 from .chess_game import chess_game
-from .game_position import GamePosition
+from .game import Game
+from .game_position import GamePosition, Status
 from .king import King
 from .knight import Knight
 from .move import Move, square_from_name, square_name
@@ -23,6 +24,7 @@ from .rook import Rook
 __all__ = [
     "Bishop",
     "Board",
+    "Game",
     "GamePosition",
     "King",
     "Knight",
@@ -33,6 +35,7 @@ __all__ = [
     "Player",
     "Queen",
     "Rook",
+    "Status",
     "chess_game",
     "square_from_name",
     "square_name",

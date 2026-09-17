@@ -123,6 +123,9 @@ CASTLING_RIGHTS_BY_COLOR = {"w": ("K", "Q"), "b": ("k", "q")}
 #: est nulle : cinquante coups de chaque camp.
 FIFTY_MOVE_PLIES = 100
 
+#: La position de départ d'une partie, en FEN.
+STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+
 
 class Status(str, Enum):
     """L'état d'une partie.
