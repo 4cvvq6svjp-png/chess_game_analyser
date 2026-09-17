@@ -1,9 +1,8 @@
-from .chess_game import chess_game
+from .cli import TerminalGame
 
 
 def main():
-    jeu = chess_game("classic")
-    jeu.launch_game()
+    TerminalGame().run()
 
 
 if __name__ == "__main__":
