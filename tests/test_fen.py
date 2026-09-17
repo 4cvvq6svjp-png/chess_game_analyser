@@ -9,7 +9,7 @@ future détection de répétition.
 
 import unittest
 
-from helpers import Board, GamePosition, square
+from helpers import GamePosition, position_with, square
 
 STARTPOS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
@@ -35,14 +35,10 @@ def placement_and_rights(position):
 
 class TestExport(unittest.TestCase):
     def test_the_starting_position_writes_itself(self):
-        position = GamePosition.from_board(Board("classic"))
-        self.assertEqual(position.to_fen(), STARTPOS)
+        self.assertEqual(GamePosition.from_fen(STARTPOS).to_fen(), STARTPOS)
 
     def test_an_empty_board_is_eight_eights(self):
-        from helpers import empty_board
-
-        position = GamePosition.from_board(empty_board())
-        self.assertTrue(position.to_fen().startswith("8/8/8/8/8/8/8/8 "))
+        self.assertTrue(position_with({}).to_fen().startswith("8/8/8/8/8/8/8/8 "))
 
     def test_no_castling_rights_writes_a_dash(self):
         bare = GamePosition.from_fen("8/8/8/8/8/8/8/K6k w - - 0 1")

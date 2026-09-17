@@ -1,6 +1,6 @@
 """Le contrat commun aux six pièces.
 
-``GamePosition.legal_moves()`` parcourra l'échiquier et demandera ses coups à
+``GamePosition.legal_moves()`` parcourt l'échiquier et demande ses coups à
 chaque pièce sans savoir laquelle elle tient. Ces tests vérifient que cet
 appel polymorphe fonctionne pour les six, et que le contrat est tenu par la
 classe de base plutôt que par la discipline.
@@ -10,7 +10,6 @@ import unittest
 
 from helpers import (
     Bishop,
-    GamePosition,
     King,
     Knight,
     Move,
@@ -18,73 +17,67 @@ from helpers import (
     Piece,
     Queen,
     Rook,
-    empty_board,
-    place,
+    position_with,
+    square,
+    square_name,
 )
 
-CENTRE = (4, 4)
+CENTRE = square("e4")
 ALL_PIECES = (Bishop, King, Knight, Pawn, Queen, Rook)
 
 
 class TestEveryPieceGenerates(unittest.TestCase):
+    def moves_from(self, position, origin):
+        return list(position.piece_at(origin).pseudo_moves(position, origin))
+
     def test_each_kind_yields_moves_anchored_on_its_square(self):
         for kind in ALL_PIECES:
             with self.subTest(piece=kind.__name__):
-                board = empty_board()
-                piece = place(board, kind("w"), CENTRE)
-                position = GamePosition.from_board(board)
-
-                moves = list(piece.pseudo_moves(position, CENTRE))
+                position = position_with({"e4": kind("w")})
+                moves = self.moves_from(position, CENTRE)
                 self.assertTrue(moves, f"{kind.__name__} ne produit aucun coup")
                 self.assertTrue(all(isinstance(m, Move) for m in moves))
                 self.assertTrue(all(m.square_from == CENTRE for m in moves))
 
     def test_no_move_ever_leaves_the_board(self):
         for kind in ALL_PIECES:
-            for origin in [(0, 0), (0, 7), (7, 0), (7, 7), (3, 3)]:
-                with self.subTest(piece=kind.__name__, origin=origin):
-                    board = empty_board()
-                    piece = place(board, kind("b"), origin)
-                    position = GamePosition.from_board(board)
-                    for move in piece.pseudo_moves(position, origin):
+            for name in ["a8", "h8", "a2", "h2", "d4"]:
+                with self.subTest(piece=kind.__name__, origin=name):
+                    position = position_with({name: kind("b")}, side_to_move="b")
+                    for move in self.moves_from(position, square(name)):
                         row, col = move.square_to
                         self.assertTrue(0 <= row < 8 and 0 <= col < 8)
 
     def test_no_piece_ever_stands_still(self):
         for kind in ALL_PIECES:
             with self.subTest(piece=kind.__name__):
-                board = empty_board()
-                piece = place(board, kind("w"), CENTRE)
-                position = GamePosition.from_board(board)
-                destinations = {m.square_to for m in piece.pseudo_moves(position, CENTRE)}
+                position = position_with({"e4": kind("w")})
+                destinations = {m.square_to for m in self.moves_from(position, CENTRE)}
                 self.assertNotIn(CENTRE, destinations)
 
     def test_a_piece_never_lands_on_a_friend(self):
         """Un échiquier saturé d'amis : plus aucun coup, pour aucune pièce."""
         for kind in ALL_PIECES:
             with self.subTest(piece=kind.__name__):
-                board = empty_board()
-                for row in range(8):
-                    for col in range(8):
-                        place(board, Pawn("w"), (row, col))
-                piece = place(board, kind("w"), CENTRE)
-                position = GamePosition.from_board(board)
-                self.assertEqual(list(piece.pseudo_moves(position, CENTRE)), [])
+                pieces = {
+                    square_name((row, col)): Pawn("w")
+                    for row in range(8)
+                    for col in range(8)
+                }
+                pieces["e4"] = kind("w")
+                position = position_with(pieces)
+                self.assertEqual(self.moves_from(position, CENTRE), [])
 
     def test_the_call_is_polymorphic(self):
         """Le site d'appel ne connaît que Piece."""
-        board = empty_board()
-        pieces = [
-            place(board, Knight("w"), (7, 1)),
-            place(board, Rook("w"), (7, 0)),
-            place(board, Pawn("w"), (6, 3)),
-        ]
-        position = GamePosition.from_board(board)
-
+        position = position_with(
+            {"b1": Knight("w"), "a1": Rook("w"), "d2": Pawn("w")}
+        )
         generated = []
-        for piece, square in zip(pieces, [(7, 1), (7, 0), (6, 3)]):
+        for name in ["b1", "a1", "d2"]:
+            piece = position.piece_at(square(name))
             self.assertIsInstance(piece, Piece)
-            generated.extend(piece.pseudo_moves(position, square))
+            generated.extend(piece.pseudo_moves(position, square(name)))
 
         self.assertTrue(generated)
         self.assertTrue(all(isinstance(m, Move) for m in generated))
@@ -93,14 +86,7 @@ class TestEveryPieceGenerates(unittest.TestCase):
 class TestTheContractIsEnforced(unittest.TestCase):
     def test_a_piece_without_a_generator_cannot_exist(self):
         class Ghost(Piece):
-            def _is_valid_move(self, square_from, square_to, BOARD):
-                return False
-
-            def _move_piece(self, board, square, add_or_remove):
-                pass
-
-            def _can_move(self, board, square):
-                return False
+            pass
 
         with self.assertRaises(TypeError):
             Ghost("w", "ghost")

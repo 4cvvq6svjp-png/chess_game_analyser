@@ -29,7 +29,6 @@ from .rook import Rook
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from .chess_board import Board
     from .pieces import Piece
 
 #: Tous les droits de roque, comme le ``KQkq`` d'une FEN.
@@ -395,30 +394,6 @@ class GamePosition:
             return ((row_from + row_to) // 2, move.square_from[1])
         return None
 
-    @classmethod
-    def from_board(
-        cls,
-        board: Board,
-        side_to_move: str = "w",
-        castling_rights: frozenset[str] = ALL_CASTLING_RIGHTS,
-    ) -> GamePosition:
-        """Construit une position depuis le ``Board`` historique.
-
-        Passerelle de migration : elle laisse le code existant (et ses tests)
-        alimenter le nouveau noyau tant que ``from_fen`` n'existe pas.
-
-        La case d'en passant est déduite du dernier coup empilé, seul endroit
-        où l'information vit aujourd'hui. Les droits de roque, eux, ne sont
-        *pas* déductibles d'un ``Board`` -- il ne garde pas trace de ce qui a
-        bougé -- d'où le paramètre explicite.
-        """
-        return cls(
-            board=tuple(tuple(row) for row in board.chessboard),
-            side_to_move=side_to_move,
-            castling_rights=castling_rights,
-            en_passant_square=_en_passant_square(board),
-        )
-
     def to_fen(self) -> str:
         """La position écrite en FEN.
 
@@ -507,19 +482,3 @@ class GamePosition:
             halfmove_clock=int(fields[4]) if len(fields) > 4 else 0,
             fullmove_number=int(fields[5]) if len(fields) > 5 else 1,
         )
-
-
-def _en_passant_square(board: Board) -> tuple[int, int] | None:
-    """La case survolée par le dernier coup, s'il s'agit d'un bond de pion.
-
-    C'est la case d'arrivée d'une éventuelle prise en passant, celle que la
-    FEN note juste après le trait.
-    """
-    if not board.play_stack:
-        return None
-    last = board.play_stack[-1]
-    row_from, col = last["square_from"]
-    row_to, _ = last["square_to"]
-    if last["piece"] != "pawn" or abs(row_from - row_to) != 2:
-        return None
-    return ((row_from + row_to) // 2, col)

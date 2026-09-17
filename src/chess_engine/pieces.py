@@ -6,7 +6,6 @@ from .move import Move
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from .chess_board import Board
     from .game_position import GamePosition
 
 
@@ -19,9 +18,26 @@ ALL_DIRECTIONS = ORTHOGONAL_DIRECTIONS + DIAGONAL_DIRECTIONS
 
 
 class Piece(ABC):
-    def __init__(self, color, name) :
+    """Une pièce : une couleur, un nom, et sa façon de se déplacer.
+
+    Sans état. Deux pièces de même nom et de même couleur sont interchangeables,
+    ce qui permet à ``GamePosition.apply`` de les partager entre positions au
+    lieu de les recopier.
+    """
+
+    def __init__(self, color, name):
         self.name = name
         self.color = color
+
+    @abstractmethod
+    def pseudo_moves(self, position: 'GamePosition', square: tuple) -> 'Iterator[Move]':
+        """Produit les coups de la pièce depuis ``square``.
+
+        « Pseudo » : la géométrie et les obstacles sont pris en compte, la
+        légalité vis-à-vis du roi ne l'est pas. Toute pièce doit savoir
+        répondre, car ``GamePosition.legal_moves()`` interroge les six de la
+        même façon, sans savoir laquelle elle tient.
+        """
 
     def _sliding_moves(self, position: 'GamePosition', square: tuple,
                        directions: tuple) -> 'Iterator[Move]':
@@ -58,38 +74,3 @@ class Piece(ABC):
             if target is not None and target.color == self.color:
                 continue
             yield Move(square, landing)
-
-    @abstractmethod
-    def pseudo_moves(self, position: 'GamePosition', square: tuple) -> 'Iterator[Move]':
-        """Produit les coups de la pièce depuis ``square``.
-
-        « Pseudo » : la géométrie et les obstacles sont pris en compte, la
-        légalité vis-à-vis du roi ne l'est pas. Toute pièce doit savoir
-        répondre, car ``GamePosition.legal_moves()`` interrogera les six de la
-        même façon, sans savoir laquelle elle tient.
-        """
-
-    @abstractmethod
-    def _is_valid_move(self, square_from, square_to, BOARD):
-        pass
-    
-    @abstractmethod
-    def _move_piece(self, board, square, add_or_remove):
-        pass
-
-    @abstractmethod
-    def _can_move(self, board, square) :
-        pass
-
-    def _execute_move(self, board: 'Board', square_from: tuple, square_to: tuple):
-        move = {"piece" : board.chessboard[square_from[0]][square_from[1]].name,
-                "square_from" : square_from,
-                "square_to" : square_to}
-        self._move_piece(board.chessboard, square_from, "remove")
-        self._move_piece(board.chessboard, square_to, "add")
-        board.play_stack.append(move)
-
-
-
-
-        

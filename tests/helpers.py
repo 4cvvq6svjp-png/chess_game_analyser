@@ -1,16 +1,17 @@
-"""Shared test helpers.
+"""Outillage commun aux tests.
 
-The engine is installed as the ``chess_engine`` package (``pip install -e .``),
-so tests import it by name -- no ``sys.path`` juggling. Every test module pulls
-the pieces/board through this helper.
+Le moteur est installé comme paquet ``chess_engine`` (``pip install -e .``),
+donc les tests l'importent par son nom.
 
-Coordinate convention (matches the engine): board[row][col] with row 0 == rank 8
-(top) and row 7 == rank 1; col 0 == file 'a'.
+Convention de coordonnées (celle du moteur) : ``board[row][col]``, ``row 0``
+est la rangée 8 et ``col 0`` la colonne a. Les tests écrivent les cases en
+notation d'échecs -- ``square("e4")`` -- parce qu'une position doit se relire
+d'un coup d'œil.
 """
 
 from chess_engine import (
     Bishop,
-    Board,
+    Game,
     GamePosition,
     King,
     Knight,
@@ -19,14 +20,14 @@ from chess_engine import (
     Piece,
     Queen,
     Rook,
-    chess_game,
+    Status,
     square_from_name,
     square_name,
 )
 
 __all__ = [
     "Bishop",
-    "Board",
+    "Game",
     "GamePosition",
     "King",
     "Knight",
@@ -35,29 +36,41 @@ __all__ = [
     "Piece",
     "Queen",
     "Rook",
-    "chess_game",
-    "empty_board",
-    "place",
+    "Status",
+    "position_with",
     "square",
+    "square_from_name",
     "square_name",
 ]
 
-
-#: ``square("e2")`` -> ``(6, 4)``. Écrire les cases en notation d'échecs rend
-#: les tests relisibles : ``square("e4")`` se vérifie d'un coup d'œil, ``(4, 4)``
-#: demande une conversion mentale. C'est la fonction du moteur, pas une copie.
+#: ``square("e2")`` -> ``(6, 4)``. C'est la fonction du moteur, pas une copie.
 square = square_from_name
 
 
-def empty_board():
-    """A Board with an empty 8x8 grid and a fresh play stack."""
-    b = Board("classic")
-    b.chessboard = [[None for _ in range(8)] for _ in range(8)]
-    b.play_stack = []
-    return b
+def position_with(
+    pieces,
+    side_to_move="w",
+    castling="-",
+    en_passant="-",
+    halfmove=0,
+    fullmove=1,
+):
+    """Une position bâtie pièce par pièce, sans écrire de FEN complète.
 
+        position_with({"e4": Knight("w"), "d5": Pawn("b")})
 
-def place(board, piece, square):
-    """Put ``piece`` on ``square`` (row, col) and return it."""
-    board.chessboard[square[0]][square[1]] = piece
-    return piece
+    Pratique quand seules deux ou trois pièces comptent ; pour une position
+    réaliste, ``GamePosition.from_fen`` reste plus lisible.
+    """
+    grid = [[None] * 8 for _ in range(8)]
+    for name, piece in pieces.items():
+        row, col = square(name)
+        grid[row][col] = piece
+    return GamePosition(
+        board=tuple(tuple(row) for row in grid),
+        side_to_move=side_to_move,
+        castling_rights=frozenset(castling) - {"-"},
+        en_passant_square=None if en_passant == "-" else square(en_passant),
+        halfmove_clock=halfmove,
+        fullmove_number=fullmove,
+    )

@@ -1,36 +1,33 @@
 """Le filtre de légalité : un seul endroit, plusieurs bugs réglés d'un coup.
 
-Clouages, fuites du roi et échecs découverts étaient traités séparément dans
-``is_it_checkmate`` et ``_can_move``, chacun avec son oubli. Ici ils ne sont
-plus des cas : ce sont les conséquences d'une seule règle, « le coup est
-illégal s'il laisse mon roi en échec ».
+Clouages, fuites du roi et échecs découverts étaient traités séparément, chacun
+avec son oubli. Ici ils ne sont plus des cas : ce sont les conséquences d'une
+seule règle, « le coup est illégal s'il laisse mon roi en échec ».
 """
 
 import unittest
 
+from chess_engine.game_position import STARTING_FEN
 from helpers import (
-    Board,
+    Bishop,
     GamePosition,
     King,
     Knight,
     Queen,
     Rook,
-    empty_board,
-    place,
+    position_with,
     square,
 )
 
 
 def start_position():
-    return GamePosition.from_board(Board("classic"))
+    return GamePosition.from_fen(STARTING_FEN)
 
 
 def play(position, *moves_text):
     """Joue une suite de coups en notation longue ('e2e4'), en les exigeant légaux."""
     for text in moves_text:
-        move = next(
-            (m for m in position.legal_moves() if str(m) == text), None
-        )
+        move = next((m for m in position.legal_moves() if str(m) == text), None)
         assert move is not None, f"{text} n'est pas légal dans cette position"
         position = position.apply(move)
     return position
@@ -55,34 +52,22 @@ class TestOpeningCounts(unittest.TestCase):
 
 class TestPinning(unittest.TestCase):
     def test_a_pinned_knight_cannot_move(self):
-        """Cavalier blanc en e2, roi en e1, tour noire en e8 : il est cloué."""
-        board = empty_board()
-        place(board, King("w"), square("e1"))
-        place(board, Knight("w"), square("e2"))
-        place(board, Rook("b"), square("e8"))
-        position = GamePosition.from_board(board)
-
+        position = position_with(
+            {"e1": King("w"), "e2": Knight("w"), "e8": Rook("b")}
+        )
         self.assertEqual(destinations_from(position, square("e2")), set())
 
     def test_the_pinned_piece_may_still_take_the_pinner(self):
-        """Un fou cloué garde le droit de manger celui qui le cloue."""
-        board = empty_board()
-        place(board, King("w"), square("e1"))
-        place(board, Queen("w"), square("e4"))
-        place(board, Rook("b"), square("e8"))
-        position = GamePosition.from_board(board)
-
+        position = position_with({"e1": King("w"), "e4": Queen("w"), "e8": Rook("b")})
         destinations = destinations_from(position, square("e4"))
         self.assertIn(square("e8"), destinations)       # prend le cloueur
         self.assertIn(square("e5"), destinations)       # reste sur la ligne
         self.assertNotIn(square("d4"), destinations)    # quitte la ligne : interdit
 
     def test_an_unpinned_piece_is_unaffected(self):
-        board = empty_board()
-        place(board, King("w"), square("e1"))
-        place(board, Knight("w"), square("d2"))
-        place(board, Rook("b"), square("e8"))
-        position = GamePosition.from_board(board)
+        position = position_with(
+            {"e1": King("w"), "d2": Knight("w"), "e8": Rook("b")}
+        )
         self.assertTrue(destinations_from(position, square("d2")))
 
 
@@ -94,36 +79,39 @@ class TestTheKingIsNoLongerFooled(unittest.TestCase):
         encore e1, qui masquait la tour : f1 semblait sûre. apply() vide la
         case de départ avant le test, donc l'ombre a disparu.
         """
-        board = empty_board()
-        place(board, King("w"), square("e1"))
-        place(board, Rook("b"), square("a1"))
-        position = GamePosition.from_board(board)
-
+        position = position_with({"e1": King("w"), "a1": Rook("b")})
         destinations = destinations_from(position, square("e1"))
         self.assertNotIn(square("f1"), destinations)
         self.assertNotIn(square("d1"), destinations)
-        self.assertEqual(destinations, {square("d2"), square("e2"), square("f2")})
+        self.assertEqual(
+            destinations, {square("d2"), square("e2"), square("f2")}
+        )
 
     def test_the_king_cannot_step_into_check(self):
-        board = empty_board()
-        place(board, King("w"), square("e1"))
-        place(board, Rook("b"), square("d8"))
-        position = GamePosition.from_board(board)
-        self.assertNotIn(square("d1"), destinations_from(position, square("e1")))
-        self.assertNotIn(square("d2"), destinations_from(position, square("e1")))
+        position = position_with({"e1": King("w"), "d8": Rook("b")})
+        destinations = destinations_from(position, square("e1"))
+        self.assertNotIn(square("d1"), destinations)
+        self.assertNotIn(square("d2"), destinations)
 
     def test_in_check_only_the_answers_remain(self):
-        """Roi en e1, dame noire en e8 : il faut parer, pas jouer ailleurs."""
-        board = empty_board()
-        place(board, King("w"), square("e1"))
-        place(board, Rook("w"), square("a2"))
-        place(board, Queen("b"), square("e8"))
-        position = GamePosition.from_board(board)
-
+        position = position_with(
+            {"e1": King("w"), "a2": Rook("w"), "e8": Queen("b")}
+        )
         self.assertTrue(position.is_in_check("w"))
         for move in position.legal_moves():
-            after = position.apply(move)
-            self.assertFalse(after.is_in_check("w"), f"{move} laisse le roi en échec")
+            self.assertFalse(
+                position.apply(move).is_in_check("w"), f"{move} laisse le roi en échec"
+            )
+
+    def test_a_diagonal_pin_confines_to_the_diagonal(self):
+        """Fou en c3, cloué par la dame en a5 : il ne quitte pas a5-e1."""
+        position = position_with(
+            {"e1": King("w"), "c3": Bishop("w"), "a5": Queen("b")}
+        )
+        self.assertEqual(
+            destinations_from(position, square("c3")),
+            {square("a5"), square("b4"), square("d2")},
+        )
 
 
 class TestEnPassantIsGenerated(unittest.TestCase):
@@ -133,7 +121,9 @@ class TestEnPassantIsGenerated(unittest.TestCase):
         self.assertIn("e5d6", {str(m) for m in position.legal_moves()})
 
     def test_it_is_gone_one_move_later(self):
-        position = play(start_position(), "e2e4", "a7a6", "e4e5", "d7d5", "a2a3", "a6a5")
+        position = play(
+            start_position(), "e2e4", "a7a6", "e4e5", "d7d5", "a2a3", "a6a5"
+        )
         self.assertIsNone(position.en_passant_square)
         self.assertNotIn("e5d6", {str(m) for m in position.legal_moves()})
 
@@ -152,12 +142,9 @@ class TestNoMoveLeft(unittest.TestCase):
 
     def test_stalemate_leaves_nothing_without_check(self):
         """Roi noir en a8, dame blanche en b6 : pas d'échec, pas de coup."""
-        board = empty_board()
-        place(board, King("b"), square("a8"))
-        place(board, Queen("w"), square("b6"))
-        place(board, King("w"), square("h1"))
-        position = GamePosition.from_board(board, side_to_move="b")
-
+        position = position_with(
+            {"a8": King("b"), "b6": Queen("w"), "h1": King("w")}, side_to_move="b"
+        )
         self.assertFalse(position.is_in_check("b"))
         self.assertEqual(position.legal_moves(), [])
 

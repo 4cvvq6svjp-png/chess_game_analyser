@@ -1,93 +1,63 @@
-"""Le générateur du roi, et l'écart assumé avec son validateur.
+"""Le générateur du roi : la géométrie seule.
 
-Les autres pièces ont un générateur qui décrit exactement ce que décrit leur
-``_is_valid_move``. Le roi, non : son validateur refuse en plus les cases
-attaquées. Ces tests fixent cet écart plutôt que de le subir -- c'est lui qui
-justifie de sortir le filtre des pièces.
+Le roi produit ses huit pas sans se demander si la case d'arrivée est
+attaquée. Ce tri appartient à ``legal_moves()``, et c'est ce qui a fait
+disparaître le « king-shadow » -- voir test_legal_moves.
 """
 
 import unittest
 
-from helpers import GamePosition, King, Knight, Pawn, Rook, empty_board, place
+from helpers import King, Pawn, Rook, position_with, square
 
-CENTRE = (4, 4)
-NEIGHBOURS = {(3, 3), (3, 4), (3, 5), (4, 3), (4, 5), (5, 3), (5, 4), (5, 5)}
+CENTRE = square("e4")
+NEIGHBOURS = {square(name) for name in ["d5", "e5", "f5", "d4", "f4", "d3", "e3", "f3"]}
 
 
 class KingCase(unittest.TestCase):
-    def destinations(self, king, board, origin=CENTRE):
-        position = GamePosition.from_board(board)
-        return {move.square_to for move in king.pseudo_moves(position, origin)}
-
-    def validated(self, king, board, origin=CENTRE):
-        return {
-            (row, col)
-            for row in range(8)
-            for col in range(8)
-            if king._is_valid_move(origin, (row, col), board)
-        }
+    def destinations(self, position, origin=CENTRE):
+        piece = position.piece_at(origin)
+        return {move.square_to for move in piece.pseudo_moves(position, origin)}
 
 
 class TestKingGeometry(KingCase):
     def test_centre_produces_the_eight_neighbours(self):
-        board = empty_board()
-        king = place(board, King("w"), CENTRE)
-        self.assertEqual(self.destinations(king, board), NEIGHBOURS)
+        self.assertEqual(
+            self.destinations(position_with({"e4": King("w")})), NEIGHBOURS
+        )
 
     def test_corner_is_clipped(self):
-        board = empty_board()
-        king = place(board, King("w"), (7, 0))  # a1
+        position = position_with({"a1": King("w")})
         self.assertEqual(
-            self.destinations(king, board, (7, 0)), {(6, 0), (6, 1), (7, 1)}
+            self.destinations(position, square("a1")),
+            {square("a2"), square("b2"), square("b1")},
         )
 
     def test_friendly_blocks_and_enemy_is_capturable(self):
-        board = empty_board()
-        king = place(board, King("w"), CENTRE)
-        place(board, Pawn("w"), (3, 4))
-        place(board, Pawn("b"), (5, 4))
-        destinations = self.destinations(king, board)
-        self.assertNotIn((3, 4), destinations)
-        self.assertIn((5, 4), destinations)
+        position = position_with({"e4": King("w"), "e5": Pawn("w"), "e3": Pawn("b")})
+        destinations = self.destinations(position)
+        self.assertNotIn(square("e5"), destinations)
+        self.assertIn(square("e3"), destinations)
 
     def test_never_moves_two_squares(self):
-        board = empty_board()
-        king = place(board, King("b"), CENTRE)
-        for row, col in self.destinations(king, board):
-            self.assertLessEqual(max(abs(row - 4), abs(col - 4)), 1)
+        position = position_with({"e4": King("b")}, side_to_move="b")
+        row, col = CENTRE
+        for r, c in self.destinations(position):
+            self.assertLessEqual(max(abs(r - row), abs(c - col)), 1)
 
+    def test_attacked_squares_are_still_produced(self):
+        """« Pseudo » veut dire sans filtre : la tour adverse ne retire rien ici."""
+        position = position_with({"e4": King("w"), "d8": Rook("b")})
+        self.assertEqual(self.destinations(position), NEIGHBOURS)
+        self.assertIn(square("d5"), self.destinations(position))
 
-class TestKingDivergesFromValidator(KingCase):
-    """Le générateur produit un sur-ensemble, et l'écart est mesurable."""
-
-    def test_generator_contains_everything_the_validator_accepts(self):
-        board = empty_board()
-        king = place(board, King("w"), CENTRE)
-        place(board, Rook("b"), (0, 3))       # tour adverse sur la colonne d
-        place(board, Knight("b"), (2, 5))     # cavalier adverse, couvre d'autres cases
-        self.assertTrue(
-            self.validated(king, board) <= self.destinations(king, board),
-            "le générateur doit être un sur-ensemble du validateur",
+    def test_castling_is_not_produced_by_the_king(self):
+        """Le roque déplace deux pièces : il vient de la position, pas du roi."""
+        position = position_with(
+            {"e1": King("w"), "h1": Rook("w"), "a1": Rook("w")}, castling="KQ"
         )
-
-    def test_the_difference_is_exactly_the_attacked_squares(self):
-        board = empty_board()
-        king = place(board, King("w"), CENTRE)
-        place(board, Rook("b"), (0, 3))  # d8 : tient toute la colonne 3
-
-        generated = self.destinations(king, board)
-        validated = self.validated(king, board)
-
-        self.assertEqual(generated, NEIGHBOURS)
-        # les trois voisines situées sur la colonne de la tour
-        self.assertEqual(generated - validated, {(3, 3), (4, 3), (5, 3)})
-        self.assertLess(len(validated), len(generated))
-
-    def test_on_a_quiet_board_the_two_agree(self):
-        """Sans pièce adverse, le filtre du validateur ne retire rien."""
-        board = empty_board()
-        king = place(board, King("w"), CENTRE)
-        self.assertEqual(self.destinations(king, board), self.validated(king, board))
+        destinations = self.destinations(position, square("e1"))
+        self.assertNotIn(square("g1"), destinations)
+        self.assertNotIn(square("c1"), destinations)
 
 
 if __name__ == "__main__":

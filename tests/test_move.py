@@ -13,14 +13,6 @@ class TestSquareName(unittest.TestCase):
         self.assertEqual(square_name((7, 7)), "h1")
         self.assertEqual(square_name((6, 4)), "e2")
 
-    def test_round_trips_with_chess_game_coordinate(self):
-        from helpers import chess_game
-
-        game = chess_game("classic")
-        for text in ["e2", "a1", "h8", "d5"]:
-            square, _ = game.coordinate(f"{text}/{text}")
-            self.assertEqual(square_name(square), text)
-
 
 class TestMove(unittest.TestCase):
     def test_long_notation(self):
