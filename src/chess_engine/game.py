@@ -72,9 +72,16 @@ class Game:
     def play(self, move: Move) -> GamePosition:
         """Joue un coup et renvoie la position obtenue.
 
-        Refuse ce qui n'est pas légal, ce qui couvre d'office les parties
-        terminées par mat ou par pat : il n'y a alors aucun coup à jouer.
+        Une partie terminée n'accepte plus rien. La FIDE fait des cinquante
+        coups et de la répétition des *réclamations*, que seuls le
+        soixante-quinzième coup et la quintuple répétition rendent
+        automatiques ; ce moteur tranche tout de suite. Une partie nulle est
+        nulle, et ``status()`` dit laquelle.
         """
+        status = self.status()
+        if status.is_over():
+            raise ValueError(f"la partie est terminée : {status.value}")
+
         position = self.current_position
         if move not in position.legal_moves():
             raise ValueError(f"coup illégal dans cette position : {move}")

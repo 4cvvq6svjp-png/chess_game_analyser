@@ -132,8 +132,8 @@ class TestThreefoldRepetition(unittest.TestCase):
 
     def test_the_count_follows_the_current_position_only(self):
         """Repartir d'ailleurs remet le compteur à une seule occurrence."""
-        game = game_after(*SHUFFLE, *SHUFFLE)
-        self.assertEqual(game.repetition_count(), 3)
+        game = game_after(*SHUFFLE)
+        self.assertEqual(game.repetition_count(), 2)
         game.play_text("e2e4")
         self.assertEqual(game.repetition_count(), 1)
         self.assertIs(game.status(), Status.ONGOING)
@@ -145,15 +145,23 @@ class TestDrawsByCounter(unittest.TestCase):
         self.assertIs(game.status(), Status.FIFTY_MOVE)
         self.assertEqual(game.result(), "1/2-1/2")
 
-    def test_but_it_does_not_block_the_players(self):
-        """La FIDE en fait une réclamation, pas une fin automatique.
-
-        La partie est signalée nulle ; libre aux joueurs de continuer. Une
-        interface qui préfère arrêter d'office lit ``status()`` et s'arrête.
-        """
+    def test_and_it_stops_the_game(self):
+        """Choix assumé : la nulle est immédiate, pas une réclamation."""
         game = Game(initial_fen="4k3/8/8/8/8/8/4R3/4K3 w - - 100 80")
-        game.play_text("e2e3")
-        self.assertEqual(game.ply, 1)
+        with self.assertRaises(ValueError):
+            game.play_text("e2e3")
+        self.assertEqual(game.ply, 0)
+
+    def test_a_repetition_stops_it_too(self):
+        game = game_after(*SHUFFLE, *SHUFFLE)
+        self.assertIs(game.status(), Status.REPETITION)
+        with self.assertRaises(ValueError):
+            game.play_text("e2e4")
+
+    def test_insufficient_material_stops_it_too(self):
+        game = Game(initial_fen="4k3/8/8/8/8/8/8/4KB2 w - - 0 1")
+        with self.assertRaises(ValueError):
+            game.play_text("e1e2")
 
     def test_insufficient_material_ends_it(self):
         game = Game(initial_fen="4k3/8/8/8/8/8/8/4KB2 w - - 0 1")
