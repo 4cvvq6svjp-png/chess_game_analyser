@@ -39,11 +39,15 @@ DESTINATION = pathlib.Path(__file__).resolve().parents[1] / "tests/data/replayed
 ARCHIVES = {
     "Morphy": "https://www.pgnmentor.com/players/Morphy.zip",
     "Alekhine": "https://www.pgnmentor.com/players/Alekhine.zip",
+    # Le pat est rare à haut niveau : aucun chez Morphy ni Alekhine, deux chez
+    # Karpov sur 3 500 parties. L'archive n'est là que pour lui.
+    "Karpov": "https://www.pgnmentor.com/players/Karpov.zip",
 }
 
 #: Les règles à couvrir, de la plus rare à la plus commune : le recouvrement
 #: glouton commence par celles qu'on ne trouve presque jamais.
 TARGETS = [
+    "stalemate",
     "underpromotion",
     "repetition_played_through",
     "en_passant",

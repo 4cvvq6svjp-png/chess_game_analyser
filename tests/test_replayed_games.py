@@ -69,6 +69,7 @@ class TestTheCorpusItself(unittest.TestCase):
             "promotion",
             "underpromotion",
             "checkmate",
+            "stalemate",
             "repetition_played_through",
         ]:
             with self.subTest(rule=rule):
@@ -111,6 +112,20 @@ class TestReplay(unittest.TestCase):
         for game_data in mated:
             with self.subTest(game=game_data["id"]):
                 self.assertEqual(replay(game_data).result(), game_data["result"])
+
+    def test_a_stalemate_is_a_draw_on_the_board(self):
+        """Le pat ne se réclame pas : plus aucun coup, et pas d'échec."""
+        stalemates = [g for g in GAMES if g["final_status"] == "stalemate"]
+        self.assertTrue(stalemates, "le corpus doit contenir au moins un pat")
+        for game_data in stalemates:
+            with self.subTest(game=game_data["id"]):
+                game = replay(game_data)
+                position = game.current_position
+                self.assertEqual(position.legal_moves(), [])
+                self.assertFalse(position.is_in_check(position.side_to_move))
+                self.assertIs(game.status(), Status.STALEMATE)
+                self.assertEqual(game.result(), "1/2-1/2")
+                self.assertEqual(game_data["result"], "1/2-1/2")
 
 
 class TestTheRulesAreActuallyExercised(unittest.TestCase):
