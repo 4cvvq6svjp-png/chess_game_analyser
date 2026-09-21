@@ -266,8 +266,11 @@ class GamePosition:
                 continue
             yield Move(plan.king_from, plan.king_to)
 
-    def status(self) -> Status:
+    def status(self, legal_moves: list[Move] | None = None) -> Status:
         """Le verdict que cette position permet de rendre, à elle seule.
+
+        ``legal_moves`` évite de les régénérer quand l'appelant les a déjà --
+        c'est la question la plus coûteuse que sache poser une position.
 
         L'ordre compte : un mat reste un mat même au centième demi-coup sans
         prise. Les fins par absence de coup passent donc avant les nulles de
@@ -276,7 +279,8 @@ class GamePosition:
         La répétition manque, et c'est volontaire : elle dépend du chemin
         parcouru, pas de la position. ``Game.status()`` la rajoute.
         """
-        if not self.legal_moves():
+        moves = self.legal_moves() if legal_moves is None else legal_moves
+        if not moves:
             return (
                 Status.CHECKMATE
                 if self.is_in_check(self.side_to_move)

@@ -169,6 +169,40 @@ class TestDrawsByCounter(unittest.TestCase):
         self.assertEqual(game.result(), "1/2-1/2")
 
 
+class TestClaimableDraws(unittest.TestCase):
+    """``auto_draw=False`` : status() dit toujours la vérité, play() n'y cède plus.
+
+    C'est ce qu'il faut pour rejouer une partie d'archive : les joueurs d'une
+    répétition triple non réclamée ont continué, et le moteur doit les suivre.
+    """
+
+    def test_a_repetition_can_be_played_through(self):
+        game = Game(auto_draw=False)
+        for text in (*SHUFFLE, *SHUFFLE):
+            game.play_text(text)
+        self.assertIs(game.status(), Status.REPETITION)
+        game.play_text("e2e4")
+        self.assertEqual(game.ply, 9)
+
+    def test_the_fifty_move_rule_can_be_played_through(self):
+        game = Game(initial_fen="4k3/8/8/8/8/8/4R3/4K3 w - - 100 80", auto_draw=False)
+        self.assertIs(game.status(), Status.FIFTY_MOVE)
+        game.play_text("e2e3")
+        self.assertEqual(game.ply, 1)
+
+    def test_a_mate_still_stops_everything(self):
+        """Une fin par absence de coup ne se réclame pas : elle s'impose."""
+        game = Game(auto_draw=False)
+        for text in FOOLS_MATE:
+            game.play_text(text)
+        self.assertIs(game.status(), Status.CHECKMATE)
+        with self.assertRaises(ValueError):
+            game.play_text("e1e2")
+
+    def test_the_default_is_still_to_stop(self):
+        self.assertTrue(Game().auto_draw)
+
+
 class TestTheHistoryIsTheSource(unittest.TestCase):
     def test_positions_follow_a_move_appended_by_hand(self):
         game = game_after("e2e4")
