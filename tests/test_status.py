@@ -7,7 +7,7 @@ ici une conséquence : plus aucun coup légal, et l'échec tranche entre les deu
 import unittest
 
 from chess_engine.game_position import Status
-from helpers import GamePosition
+from helpers import GamePosition, square
 
 STARTPOS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
@@ -109,6 +109,43 @@ class TestRepetitionKey(unittest.TestCase):
         white = GamePosition.from_fen(STARTPOS)
         black = GamePosition.from_fen(STARTPOS.replace(" w ", " b "))
         self.assertNotEqual(white.repetition_key(), black.repetition_key())
+
+
+class TestTheEnPassantSquareInTheKey(unittest.TestCase):
+    """La FIDE compare les positions par les coups qu'elles permettent.
+
+    Une case d'en passant que personne ne peut prendre n'en change aucun : la
+    retenir dans la clé ferait manquer des répétitions bien réelles.
+    """
+
+    def test_a_double_push_nobody_can_answer_leaves_no_trace(self):
+        after_d4 = GamePosition.from_fen(
+            "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1"
+        )
+        self.assertFalse(after_d4.en_passant_is_available())
+        self.assertTrue(after_d4.repetition_key().endswith(" -"))
+
+    def test_a_double_push_a_pawn_can_answer_stays_in_the_key(self):
+        with_taker = GamePosition.from_fen(
+            "rnbqkbnr/ppp1pppp/8/8/3Pp3/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1"
+        )
+        self.assertTrue(with_taker.en_passant_is_available())
+        self.assertTrue(with_taker.repetition_key().endswith(" d3"))
+
+    def test_a_pinned_pawn_cannot_answer(self):
+        """dxc6 e.p. viderait d5 et découvrirait le roi a5 sur la tour h5."""
+        pinned = GamePosition.from_fen("8/8/8/K1pP3r/8/8/8/7k w - c6 0 1")
+        self.assertFalse(pinned.en_passant_is_available())
+        self.assertTrue(pinned.repetition_key().endswith(" -"))
+        self.assertNotIn("d5c6", {str(m) for m in pinned.legal_moves()})
+
+    def test_the_square_itself_is_untouched(self):
+        """Seule la clé ignore la case : la position, elle, la garde."""
+        after_d4 = GamePosition.from_fen(
+            "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1"
+        )
+        self.assertEqual(after_d4.en_passant_square, square("d3"))
+        self.assertIn(" d3 ", after_d4.to_fen())
 
 
 class TestStatusVocabulary(unittest.TestCase):

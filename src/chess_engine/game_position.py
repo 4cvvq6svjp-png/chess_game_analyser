@@ -299,8 +299,42 @@ class GamePosition:
         droits de roque et la case d'en passant. Deux positions identiques
         atteintes par des chemins différents donnent la même clé, et c'est ce
         que compte la règle de la triple répétition.
+
+        Une nuance qui coûte cher à ignorer : la FIDE compare les positions par
+        *les coups qu'elles permettent*. Une case d'en passant que personne ne
+        peut prendre n'en change aucun, donc elle ne doit pas distinguer deux
+        positions -- alors que la FEN, elle, l'inscrit après n'importe quel bond
+        de pion. La retenir ferait manquer des répétitions bien réelles.
         """
-        return " ".join(self.to_fen().split()[:4])
+        fields = self.to_fen().split()[:4]
+        if not self.en_passant_is_available():
+            fields[3] = "-"
+        return " ".join(fields)
+
+    def en_passant_is_available(self) -> bool:
+        """Un pion du camp au trait peut-il réellement prendre en passant ?
+
+        Au plus deux candidats, et seulement quand la case existe : le coût est
+        négligeable devant ce qu'il évite.
+        """
+        if self.en_passant_square is None:
+            return False
+        row, col = self.en_passant_square
+        origin_row = row - Pawn.DIRECTION[self.side_to_move]
+        if not 0 <= origin_row < 8:
+            return False
+        for dc in (-1, 1):
+            origin = (origin_row, col + dc)
+            if not 0 <= origin[1] < 8:
+                continue
+            piece = self.piece_at(origin)
+            if piece is None or piece.name != "pawn" or piece.color != self.side_to_move:
+                continue
+            if not self.apply(Move(origin, self.en_passant_square)).is_in_check(
+                self.side_to_move
+            ):
+                return True
+        return False
 
     def has_insufficient_material(self) -> bool:
         """Aucun des deux camps ne peut mater, même avec la coopération de l'autre.
