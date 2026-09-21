@@ -4,3 +4,11 @@
 # pycache files
 __pycache__/
 *.pyc
+
+# packaging / build artefacts
+*.egg-info/
+build/
+dist/
+
+# ruff cache
+.ruff_cache/

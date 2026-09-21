@@ -10,16 +10,18 @@ corrigés) et [`chess-logic-todo.md`](./chess-logic-todo.md) (dette de règles).
 
 ## 1. État des lieux
 
-~1 380 lignes de Python, stdlib uniquement, zéro dépendance, jeu jouable au
-terminal. 51 tests `unittest`, tous verts.
+~1 380 lignes de Python, stdlib uniquement, zéro dépendance de production, jeu
+jouable au terminal. 51 tests `unittest`, tous verts.
 
 ### Architecture actuelle
+
+Modules du package `chess_engine` (`src/chess_engine/`, installé en editable).
 
 | Module | Rôle |
 |---|---|
 | `pieces.py` | `Piece` (ABC) : `_is_valid_move`, `_move_piece(add\|remove)`, `_can_move`, `_execute_move` |
 | `pawn/knight/bishop/rook/queen/king.py` | une classe par pièce, valident un coup **proposé** |
-| `move_utility.py` | ray-walking statique : `check_diags/lines/horses`, `reach_sqr_*` |
+| `move_utility.py` | ray-walking statique : `check_diags/lines/knights`, `reach_sqr_*` |
 | `chess_board.py` | matrice 8×8 `list[list[Piece\|None]]`, `play_stack`, détection échec/mat/pat, affichage |
 | `chess_game.py` | boucle de jeu, parsing `"a1/a3"`, rejet de l'auto-échec par `deepcopy` |
 | `player.py` | `input()` terminal |
@@ -31,8 +33,8 @@ Convention de coordonnées : `board[row][col]`, `row 0` = rang 8, `col 0` = colo
 - Les `check_*` renvoient `{"check": False}` quand la case **est** attaquée. Le
   booléen est inversé par rapport à son nom.
 - `is_in_check` compte les `True` : 3 = pas d'échec, ≤ 1 = échec double.
-- Le cavalier porte le nom `"horse"`, mais `create_piece_by_name` attend
-  `"knight"` → une promotion en cavalier produit une pièce nommée `"horse"`.
+- ~~Le cavalier porte le nom `"horse"`~~ → corrigé en phase 0 : `"knight"`
+  partout, ce qui règle du même coup la promotion en cavalier.
 - `_move_piece(..., "add")` **recrée une nouvelle instance** de la pièce.
   L'identité de l'objet est perdue à chaque coup.
 
@@ -60,9 +62,9 @@ Ce ne sont pas des bugs : c'est ce qui empêche mécaniquement les features vis�
    d'import.
 4. **Identité des pièces détruite à chaque coup** → impossible de porter un flag
    `has_moved` → le roque est bloqué par construction.
-5. **Imports plats** (`from chess_board import Board`) → le code n'est importable
-   qu'en manipulant `sys.path`. Non packageable, donc pas consommable
-   proprement par un serveur web.
+5. ~~**Imports plats**~~ → **levé en phase 0**. Le moteur est le package
+   `chess_engine` (layout `src/`, imports relatifs, `pip install -e .`) :
+   importable depuis n'importe où, donc consommable par un serveur web.
 
 ---
 
@@ -76,7 +78,7 @@ Ce ne sont pas des bugs : c'est ce qui empêche mécaniquement les features vis�
 | 4 | `_is_stalemate` = `play_stack[:4] == play_stack[4:]` : vrai seulement au demi-coup 8, et ce n'est pas la répétition triple. | lecture |
 | 5 | Règle des 50 coups, matériel insuffisant : absents. | lecture |
 | 6 | Promotion non enregistrée dans `play_stack` → casse l'en passant suivant et tout historique. | lecture |
-| 7 | `README.md` est encodé en **UTF-16 LE + CRLF** : GitHub l'affiche illisible. | vérifié |
+| 7 | ~~`README.md` encodé en **UTF-16 LE + CRLF**~~ : il bloquait aussi `pip install` (setuptools lit le readme en UTF-8). | **corrigé** (phase 0) |
 
 Les points 1-3 disparaissent d'eux-mêmes avec le générateur de coups légaux
 (§4). Ils ne sont pas à corriger un par un.
@@ -224,6 +226,72 @@ En complément : `python-chess` comme **oracle de test uniquement** (générer d
 milliers de positions aléatoires, comparer les listes de coups légaux). Aucune
 dépendance en production, confiance maximale.
 
+### 4.2 bis — Parties réelles rejouées : le test d'intégration
+
+Perft et l'oracle valident les règles *localement* : à une position donnée, la
+liste des coups est-elle la bonne ? Ils ne disent rien de la **chaîne complète**
+— lire une partie, la rejouer coup après coup, et reconnaître son issue.
+
+D'où un troisième filet, complémentaire : un corpus de **parties connues à
+issue déterministe**, rejouées de bout en bout par le moteur.
+
+Le test, pour chaque partie du corpus :
+
+1. charger le PGN et partir de la position initiale
+2. rejouer **chaque** coup — aucun ne doit être refusé par `legal_moves()`
+3. vérifier qu'à la fin, `status()` correspond au résultat enregistré
+   (mat, pat, nulle par répétition / 50 coups / matériel insuffisant)
+4. vérifier qu'aucun **faux positif** ne se déclenche en cours de route : pas de
+   mat ni de pat annoncé avant le dernier coup
+
+Un seul coup légal refusé, un mat annoncé trop tôt, et le test tombe en
+désignant la partie et le numéro du coup — c'est un localisateur de bug, pas
+seulement un détecteur.
+
+**Ce que ça attrape et que perft rate.** Perft compte des nœuds ; il ne
+traverse jamais le parser, ni `status()`, ni l'historique. Une régression dans
+la lecture SAN, dans la tenue de `play_stack` (cf. bug n° 6 : promotion non
+enregistrée), ou un pat détecté un demi-coup trop tôt passent inaperçus en
+perft et sautent immédiatement ici. Inversement, ce corpus ne prouve rien sur
+les positions exotiques — d'où la complémentarité.
+
+**Corpus.** Une dizaine de parties suffit, choisies pour leur couverture plutôt
+que pour leur célébrité :
+
+| Partie | Ce qu'elle couvre |
+|---|---|
+| Morphy — Duke of Brunswick & Comte Isouard, 1858 | mat, sacrifices, petit roque |
+| Anderssen — Kieseritzky, 1851 (« Immortelle ») | mat, série de prises |
+| Kasparov — Topalov, 1999 | partie longue, roi baladeur |
+| une partie à promotion (dame **et** sous-promotion) | promotion, bug n° 6 |
+| une partie avec prise en passant | en passant dans un vrai contexte |
+| une nulle par répétition | répétition triple |
+| une nulle par la règle des 50 coups | compteur de demi-coups |
+| une finale R+F vs R | matériel insuffisant |
+| un pat classique en finale | pat vs mat |
+| grand roque des deux côtés | roque long |
+
+**Provenance et reproductibilité.** Les coups d'une partie sont des faits, pas
+une œuvre : pas de difficulté de licence. La base ouverte de Lichess (CC0) ou
+un export PGN public font l'affaire.
+
+Point important : les fichiers sont **téléchargés une fois puis versionnés**
+dans `tests/data/`, jamais récupérés au moment du test. Une CI qui dépend du
+réseau est une CI qui rougit sans raison — et un corpus figé rend les échecs
+reproductibles.
+
+**Quand.** Le test a besoin de lire du SAN (`Nf3`), ce qui suppose
+`legal_moves()` (§4.7). Deux options :
+
+- **fin de phase 1** : rejouer les parties en notation de coordonnées
+  (`e2e4`), obtenue en convertissant le corpus une fois pour toutes. Le filet
+  est en place au plus tôt, sans attendre le parser.
+- **phase 4** : rejouer le PGN directement, ce qui teste *aussi* le parser.
+
+Les deux se cumulent : la version coordonnées valide le moteur, la version PGN
+valide l'import. La première est la plus rentable, et c'est celle à écrire
+d'abord.
+
 ### 4.3 Stack applicative
 
 **Backend** — FastAPI + Pydantic (le moteur est déjà en Python).
@@ -300,11 +368,16 @@ s'il en reste exactement un, c'est celui-là. La désambiguïsation (`Nbd2`,
 
 ## 5. Découpage en phases
 
-### Phase 0 — Assainir (1-2 j)
-- `pyproject.toml`, package `chess_engine`, imports relatifs, layout `src/`
-- CI GitHub Actions : tests + lint (ruff)
-- Renommer `horse` → `knight` partout
-- Réécrire `README.md` en UTF-8 (les notes de travail actuelles → `docs/`)
+### Phase 0 — Assainir ✅ *terminée*
+- ✅ `pyproject.toml`, package `chess_engine`, imports relatifs, layout `src/`
+  (`pip install -e .`, script `chess-game`, plus de `sys.path` dans les tests)
+- ✅ CI GitHub Actions : tests + lint (ruff) sur Python 3.10 et 3.12
+- ✅ Renommer `horse` → `knight` partout — corrige au passage la promotion en
+  cavalier, `create_piece_by_name` attendant déjà `"knight"`
+- ✅ Réécrire `README.md` en UTF-8 ; notes de travail → `docs/journal-de-bord.md`
+
+Les 51 tests restent verts, le jeu terminal reste jouable. Aucun changement de
+règles.
 
 ### Phase 1 — Noyau de règles (4-6 j) — *le gros morceau*
 
@@ -318,6 +391,8 @@ restent verts et le jeu terminal jouable.
   matériel insuffisant
 - `status()` unifié ; mat et pat deviennent des cas dérivés
 - **Perft 1-5 sur 5 positions de référence** + oracle `python-chess` en test
+- **Corpus de parties réelles rejouées** (§4.2 bis), en notation de
+  coordonnées, avec les PGN versionnés dans `tests/data/`
 - Les 51 tests existants réécrits sur la nouvelle API
 
 ### Phase 2 — API (2-3 j)
@@ -338,6 +413,8 @@ restent verts et le jeu terminal jouable.
 ### Phase 4 — Import / export (2-3 j)
 - Parser et écrire le PGN, charger une FEN
 - Coller un PGN ou charger un fichier
+- Rejouer le corpus de parties **depuis le PGN** cette fois (§4.2 bis) : le même
+  test valide alors le parser en plus du moteur
 - Mode « revoir une partie importée » : réutilise le composant rewind tel quel
 
 ### Phase 5 — IA (3-5 j)
@@ -361,6 +438,9 @@ Par ordre de rapport valeur / effort :
 2. **FEN/PGN comme format pivot** dès le départ — ce n'est pas une feature,
    c'est une fondation
 3. **Perft** — le seul moyen d'avoir vraiment confiance dans les règles
+3 bis. **Corpus de parties rejouées** (§4.2 bis) — le pendant « bout en bout »
+   de perft : couvre le parser, `status()` et l'historique, que perft ne
+   traverse jamais
 4. **Incrément Fischer** — gratuit si prévu dès le modèle de données
 5. **Persistance SQLite** — sinon un `uvicorn --reload` perd la partie en cours
 6. **Variantes dans le rewind** — ce qui transforme le rewind en outil d'analyse
@@ -382,6 +462,7 @@ comptes utilisateurs, classement Elo.
 | **Bibliothèque externe** | Moteur maison. `python-chess` **uniquement en oracle de test** (comparaison de listes de coups légaux), jamais en dépendance de production. |
 | **IA** | Minimax maison en premier : alpha-bêta, tri des coups, quiescence, éval matériel/PST. Stockfish reste branchable plus tard derrière la même interface `Engine.choose_move()`, notamment pour la phase analyse. |
 | **Architecture** | Serveur FastAPI **autoritaire** sur les règles, y compris en 1v1 local. Le front ne calcule jamais la légalité : il demande les coups légaux à l'API. Une seule implémentation des règles, et le backend est de toute façon nécessaire pour l'IA et l'analyse. |
+| **Stratégie de test** | Trois filets complémentaires : **perft** (exhaustivité combinatoire), **oracle `python-chess`** (comparaison de listes sur positions aléatoires) et **corpus de parties réelles rejouées** de bout en bout (§4.2 bis). Corpus PGN versionné dans `tests/data/`, jamais téléchargé pendant le test. |
 
 ### Reste à trancher plus tard
 - Rewind : ramener au présent (phase 3) puis variantes (phase 6) — confirmé au

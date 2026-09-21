@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chess-game-analyser"
+version = "0.1.0"
+description = "Moteur d'échecs en Python pur : règles, parties et analyse"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.5",
+]
+
+[project.scripts]
+chess-game = "chess_engine.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 120
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# Démarrage volontairement conservateur : correction (pyflakes), tri des
+# imports et modernisations sûres. Le style historique du code (espaces avant
+# ':', casse des variables) n'est pas encore imposé — à durcir progressivement.
+select = ["E9", "F", "I", "UP"]

@@ -1,5 +1,10 @@
 # Code review — terminal chess engine (June 2026)
 
+> **Note (phase 0)** : ce document décrit l'arborescence telle qu'elle était en
+> juin 2026. `src/game_logic/` est depuis devenu le package `src/chess_engine/`,
+> et `tests/helpers.py` n'a plus besoin de `sys.path`. Voir
+> [`roadmap.md`](./roadmap.md) § Phase 0.
+
 Review of the move/rules logic in `src/game_logic/`. The goal was to find
 correctness bugs that let illegal moves through, declare false results, or
 corrupt board state — and to add a regression test suite. Deferred features
