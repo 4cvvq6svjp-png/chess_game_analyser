@@ -27,10 +27,18 @@ class Game:
     ``moves`` ne fait que croître : jouer ajoute, rien ne retire. Reprendre un
     coup (le *takeback*) est une autre fonctionnalité, qui consistera à
     construire une partie plus courte, pas à modifier celle-ci.
+
+    ``auto_draw`` sépare l'observation de la politique. ``status()`` dit
+    toujours la vérité ; ce drapeau décide seulement si ``play()`` s'y arrête.
+    Par défaut oui : une partie nulle est nulle. Le mettre à ``False`` rend les
+    nulles réclamables au sens de la FIDE, ce qu'il faut pour rejouer une
+    partie d'archive -- les joueurs d'une répétition triple non réclamée ont
+    continué, et le moteur doit pouvoir les suivre.
     """
 
     initial_fen: str = STARTING_FEN
     moves: list[Move] = field(default_factory=list)
+    auto_draw: bool = True
 
     def __post_init__(self):
         self._positions: list[GamePosition] = []
@@ -75,8 +83,9 @@ class Game:
     def play(self, move: Move) -> GamePosition:
         """Joue un coup et renvoie la position obtenue.
 
-        Une partie terminée n'accepte plus rien : une nulle est une nulle, et
-        ``status()`` dit laquelle.
+        Une partie terminée n'accepte plus rien. Mat et pat arrêtent toujours,
+        faute de coup à jouer ; les nulles de compteur et de répétition
+        n'arrêtent que si ``auto_draw`` est vrai, ce qui est le cas par défaut.
         """
         position = self.current_position
         return self._play(move, position, position.legal_moves())
@@ -97,7 +106,7 @@ class Game:
         la position ; y répondre trois fois coûtait trois fois le prix.
         """
         status = self._status_of(position, legal)
-        if status.is_over():
+        if status.is_over() and (self.auto_draw or not status.is_draw()):
             raise ValueError(f"la partie est terminée : {status.value}")
         if move not in legal:
             raise ValueError(f"coup illégal dans cette position : {move}")
