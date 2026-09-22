@@ -5,6 +5,7 @@ C'est ce qui rend le rembobinage gratuit -- et ce qui permet de compter les
 répétitions, la seule règle qu'aucune position ne peut trancher seule.
 """
 
+import time
 import unittest
 
 from chess_engine import Game, GamePosition, Status
@@ -201,6 +202,117 @@ class TestClaimableDraws(unittest.TestCase):
 
     def test_the_default_is_still_to_stop(self):
         self.assertTrue(Game().auto_draw)
+
+
+class TestResignation(unittest.TestCase):
+    """Une fin décidée par un joueur, enregistrée et non déduite."""
+
+    def test_it_takes_effect_without_anyone_trying_a_move(self):
+        """Le point de la chose : la lecture suivante suffit à la voir."""
+        game = game_after("e2e4", "e7e5")
+        self.assertIs(game.status(), Status.ONGOING)
+
+        returned = game.resign("w")
+
+        self.assertIs(returned, Status.RESIGNATION)
+        self.assertIs(game.status(), Status.RESIGNATION)
+        self.assertTrue(game.is_over())
+
+    def test_the_position_alone_would_still_say_ongoing(self):
+        """La fin est sur la partie, pas sur l'échiquier."""
+        game = game_after("e2e4", "e7e5")
+        game.resign("b")
+        self.assertIs(game.current_position.status(), Status.ONGOING)
+        self.assertIs(game.status(), Status.RESIGNATION)
+
+    def test_the_side_that_resigns_is_the_side_that_loses(self):
+        white_quits = game_after("e2e4", "e7e5")
+        white_quits.resign("w")
+        self.assertEqual(white_quits.result(), "0-1")
+
+        black_quits = game_after("e2e4", "e7e5")
+        black_quits.resign("b")
+        self.assertEqual(black_quits.result(), "1-0")
+
+    def test_it_does_not_depend_on_whose_turn_it_is(self):
+        """Abandonner pendant le tour adverse reste possible, et perd."""
+        game = game_after("e2e4")  # au trait : les noirs
+        game.resign("w")
+        self.assertEqual(game.current_position.side_to_move, "b")
+        self.assertEqual(game.result(), "0-1")
+
+    def test_nothing_can_be_played_afterwards(self):
+        game = game_after("e2e4", "e7e5")
+        game.resign("w")
+        with self.assertRaises(ValueError):
+            game.play_text("g1f3")
+        self.assertEqual(game.ply, 2)
+
+    def test_the_moves_already_played_are_kept(self):
+        game = game_after(*SCHOLARS_MATE[:4])
+        game.resign("b")
+        self.assertEqual(game.ply, 4)
+        self.assertEqual(len(game.positions()), 5)
+        self.assertEqual(game.position_at(0).to_fen(), game.initial_fen)
+
+    def test_the_instant_is_recorded_and_can_be_supplied(self):
+        """C'est lui qui figera l'horloge : il ne doit pas être reconstitué."""
+        game = game_after("e2e4")
+        game.resign("w", at=1700000000.0)
+        self.assertEqual(game.termination.at, 1700000000.0)
+        self.assertEqual(game.termination.by, "w")
+        self.assertIs(game.termination.status, Status.RESIGNATION)
+
+    def test_the_instant_defaults_to_now(self):
+        before = time.time()
+        game = game_after("e2e4")
+        game.resign("b")
+        self.assertGreaterEqual(game.termination.at, before)
+        self.assertLessEqual(game.termination.at, time.time())
+
+    def test_the_record_is_frozen(self):
+        game = game_after("e2e4")
+        game.resign("w")
+        with self.assertRaises(Exception):
+            game.termination.by = "b"
+
+    def test_resigning_twice_is_refused(self):
+        game = game_after("e2e4")
+        game.resign("w")
+        with self.assertRaises(ValueError):
+            game.resign("b")
+        self.assertEqual(game.termination.by, "w")
+
+    def test_a_finished_game_cannot_be_resigned(self):
+        game = game_after(*FOOLS_MATE)
+        with self.assertRaises(ValueError):
+            game.resign("w")
+        self.assertIs(game.status(), Status.CHECKMATE)
+
+    def test_an_unknown_colour_is_refused(self):
+        game = game_after("e2e4")
+        for colour in ["white", "W", "", None]:
+            with self.subTest(colour=colour):
+                with self.assertRaises(ValueError):
+                    game.resign(colour)
+        self.assertIsNone(game.termination)
+
+    def test_a_resignation_is_not_a_draw(self):
+        self.assertFalse(Status.RESIGNATION.is_draw())
+        self.assertTrue(Status.RESIGNATION.is_over())
+
+    def test_it_still_works_on_a_game_reported_drawn_but_playable(self):
+        """auto_draw=False : la partie continue, donc on peut encore abandonner."""
+        game = Game(auto_draw=False)
+        for text in (*SHUFFLE, *SHUFFLE):
+            game.play_text(text)
+        self.assertIs(game.status(), Status.REPETITION)
+        self.assertFalse(game.is_over())
+
+        game.resign("b")
+        self.assertIs(game.status(), Status.RESIGNATION)
+        self.assertEqual(game.result(), "1-0")
+        self.assertTrue(game.is_over())
 
 
 class TestTheHistoryIsTheSource(unittest.TestCase):
