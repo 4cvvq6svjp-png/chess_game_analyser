@@ -11,6 +11,7 @@ sur une position : il faut savoir par où l'on est passé.
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 
 from .game_position import STARTING_FEN, GamePosition, Status
@@ -18,6 +19,22 @@ from .move import Move
 
 #: Le nombre d'apparitions d'une même position qui rend la partie nulle.
 REPETITION_LIMIT = 3
+
+
+@dataclass(frozen=True)
+class Termination:
+    """Une fin décidée par un joueur, pas par l'échiquier.
+
+    C'est un *fait enregistré*, pas une déduction : contrairement au mat ou au
+    pat, rien dans la position ne permettrait de la retrouver. D'où l'instant,
+    qui n'est pas décoratif -- c'est lui qui fige l'horloge. Un abandon reçu à
+    14h03 arrête le temps à 14h03, pas au prochain coup, ni à la prochaine
+    lecture.
+    """
+
+    status: Status
+    by: str | None
+    at: float
 
 
 @dataclass
@@ -39,6 +56,7 @@ class Game:
     initial_fen: str = STARTING_FEN
     moves: list[Move] = field(default_factory=list)
     auto_draw: bool = True
+    termination: Termination | None = None
 
     def __post_init__(self):
         self._positions: list[GamePosition] = []
@@ -99,6 +117,33 @@ class Game:
             raise ValueError(f"coup illégal ou mal écrit : {text!r}")
         return self._play(move, position, legal)
 
+    def resign(self, color: str, at: float | None = None) -> Status:
+        """Le camp ``color`` abandonne. Prend effet immédiatement.
+
+        « Immédiatement » au sens fort : la fin est inscrite sur la partie, pas
+        déduite de la position. Toute lecture ultérieure de ``status()`` la
+        rend sans rien recalculer, sans attendre qu'on tente un coup. Une
+        requête d'API qui appelle ceci a terminé la partie quand elle rend la
+        main, et ``at`` marque l'instant où l'horloge s'arrête.
+        """
+        if color not in ("w", "b"):
+            raise ValueError(f"couleur inconnue : {color!r}")
+        if self.is_over():
+            raise ValueError(f"la partie est déjà terminée : {self.status().value}")
+        self.termination = Termination(
+            Status.RESIGNATION, by=color, at=time.time() if at is None else at
+        )
+        return self.termination.status
+
+    def is_over(self) -> bool:
+        """Plus rien ne peut se jouer ici.
+
+        Distinct de ``status().is_over()`` : avec ``auto_draw=False``, une
+        partie peut être signalée nulle tout en restant jouable.
+        """
+        status = self.status()
+        return status.is_over() and (self.auto_draw or not status.is_draw())
+
     def _play(self, move, position, legal):
         """Le corps commun, qui ne génère les coups légaux qu'une fois.
 
@@ -129,13 +174,22 @@ class Game:
     def status(self) -> Status:
         """Le verdict de la partie.
 
-        La position tranche d'abord -- un mat ne devient pas une nulle parce
+        Une fin enregistrée l'emporte sur tout : elle est déjà survenue, il n'y
+        a rien à recalculer. C'est aussi ce qui la rend immédiate -- la lecture
+        n'attend pas qu'un coup soit tenté.
+
+        Sinon la position tranche -- un mat ne devient pas une nulle parce
         qu'il survient sur une position déjà vue -- puis la répétition, qui
         n'est visible que d'ici.
         """
         return self._status_of(self.current_position, None)
 
     def _status_of(self, position: GamePosition, legal: list[Move] | None) -> Status:
+        # La fin enregistrée est consultée ici, et non dans ``status()``, pour
+        # que *tous* les chemins la voient -- ``play()`` passe par là sans
+        # appeler ``status()``, et laisserait sinon jouer une partie abandonnée.
+        if self.termination is not None:
+            return self.termination.status
         status = position.status(legal)
         if status.is_over():
             return status
@@ -146,11 +200,15 @@ class Game:
     def result(self) -> str | None:
         """``"1-0"``, ``"0-1"``, ``"1/2-1/2"``, ou ``None`` si rien n'est joué.
 
-        Le camp au trait est celui qui subit le mat, donc celui qui perd.
+        Deux façons de perdre, et le perdant ne se lit pas au même endroit :
+        au mat c'est le camp au trait, qui le subit ; à l'abandon c'est celui
+        qui l'a demandé, quel que soit le trait.
         """
         status = self.status()
         if not status.is_over():
             return None
+        if status is Status.RESIGNATION:
+            return "0-1" if self.termination.by == "w" else "1-0"
         if status is Status.CHECKMATE:
             return "0-1" if self.current_position.side_to_move == "w" else "1-0"
         return "1/2-1/2"

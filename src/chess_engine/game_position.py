@@ -132,23 +132,26 @@ class Status(str, Enum):
     Hérite de ``str`` pour rester sérialisable tel quel -- l'API renverra ces
     valeurs sans conversion.
 
-    ``REPETITION`` ne peut pas venir d'une position seule : il faut l'histoire
-    qui y mène. C'est ``Game`` qui le produit, à partir de
-    ``repetition_key``.
+    Toutes ces valeurs ne viennent pas de la position. ``GamePosition.status()``
+    rend les quatre premières ; les deux dernières sont l'affaire de ``Game`` :
+    ``REPETITION`` demande l'histoire qui mène à la position, ``RESIGNATION``
+    n'a rien à voir avec l'échiquier -- c'est une décision de joueur.
     """
 
     ONGOING = "ongoing"
     CHECKMATE = "checkmate"
     STALEMATE = "stalemate"
     FIFTY_MOVE = "fifty_move"
-    REPETITION = "repetition"
     INSUFFICIENT_MATERIAL = "insufficient_material"
+    REPETITION = "repetition"
+    RESIGNATION = "resignation"
 
     def is_over(self) -> bool:
         return self is not Status.ONGOING
 
     def is_draw(self) -> bool:
-        return self not in (Status.ONGOING, Status.CHECKMATE)
+        """Un abandon termine la partie, mais il la *décide* : ce n'est pas nul."""
+        return self not in (Status.ONGOING, Status.CHECKMATE, Status.RESIGNATION)
 
 
 @dataclass(frozen=True, slots=True)
