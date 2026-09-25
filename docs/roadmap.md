@@ -21,9 +21,10 @@ Modules du package `chess_engine` (`src/chess_engine/`, installé en editable).
 
 | Module | Rôle |
 |---|---|
-| `game_position.py` | `GamePosition` : les six champs d'une FEN, immuable. `legal_moves`, `apply`, `to_fen`/`from_fen`, `status`, `repetition_key` |
+| `game_position.py` | `GamePosition` : les six champs d'une FEN, immuable. `legal_moves`, `apply`, `to_fen`/`from_fen`, `status`, `repetition_key`, `san` |
 | `game.py` | `Game` : FEN initiale + liste de coups. Historique, rembobinage, répétition triple, résultat |
 | `move.py` | `Move` : d'où, vers où, promotion. Notation longue |
+| `document.py` | `game_document` : le document de partie servi par l'API (ajouté en phase 2.1) |
 | `pieces.py` | `Piece` (ABC) : `pseudo_moves` abstraite, plus les deux marcheurs partagés |
 | `pawn/knight/bishop/rook/queen/king.py` | une classe par pièce : sa géométrie, et rien d'autre |
 | `move_utility.py` | `check_diags/lines/knights` : les cases attaquées, par rayons |
@@ -452,9 +453,10 @@ est donc terminée dès que `resign()` rend la main, sans attendre qu'un coup so
 tenté. `Status` a gagné `RESIGNATION`, comme il portait déjà `REPETITION` que la
 position ne produit jamais.
 
-Restent : la **proposition de nulle** (il lui faut un état intermédiaire « w a
-proposé, b n'a pas répondu ») et les **exceptions typées**, prérequis de la
-couche web — voir §2 du contrat.
+Reste : les **exceptions typées**, prérequis de la couche web — voir §2 du
+contrat. La **proposition de nulle** est **reportée** après la phase 2 (voir §9
+du contrat) ; il lui faudra un état intermédiaire « w a proposé, b n'a pas
+répondu ».
 
 <details><summary>Le raisonnement d'origine</summary>
 
@@ -471,17 +473,33 @@ n'a alors plus qu'à l'exposer.
 
 </details>
 
-**2.1 — Le format de transport** *(pur Python, aucun serveur)*
+**2.1 — Le format de transport** ✅ *terminée* *(pur Python, aucun serveur)*
 
 `Game` est déjà exactement ce qu'il faut envoyer : une FEN initiale et une
 liste de coups. `Status` hérite de `str`, donc sérialisable tel quel.
 `to_dict()` / `from_dict()` se testent sans rien lancer, et fixent le contrat
 avant que FastAPI n'existe.
 
+L'**écriture du SAN** (`GamePosition.san(move)`) arrive ici, et non en phase 4 :
+le document de partie sert la liste des coups en SAN, que le front de la
+phase 3 ne peut pas calculer seul (contrat §2 bis). Seul le parser reste en
+phase 4.
+
+Fait : `Game.to_dict()` / `Game.from_dict()` pour la forme durable —
+`from_dict` rejoue chaque coup, donc revalide la partie — et
+`chess_engine.game_document()` pour le document du contrat §5, sans les champs
+d'application (id, joueurs, cadence, horloge) que l'API ajoutera. Le SAN est
+écrit par `_play`, qui a déjà les coups légaux en main : rejouer la plus
+longue partie du corpus passe de ~170 à ~180 ms, et `san()` ne coûte ensuite
+plus rien. Le corpus porte désormais le SAN de `python-chess`, croisé coup par
+coup avec le nôtre.
+
 **2.2 — Les endpoints, en mémoire**
 
-`POST /games`, `GET /games/{id}`, `POST /games/{id}/moves`,
-`GET /games/{id}/legal-moves?from=e2`, `/resign`, `/draw-offer`. Stockage dans
+`POST /games`, `GET /games/{id}`, `POST /games/{id}/moves`, `/resign`
+(`/legal-moves` écarté, `/draw-offer` reporté — voir le contrat). La création
+accepte déjà `players` et `time_control` (contrat §4), même si l'IA et
+l'horloge n'existent pas encore. Stockage dans
 un dictionnaire, tests via `TestClient`. Aucune base : ce qu'on valide ici,
 c'est la forme de l'API, pas sa durabilité.
 
@@ -516,7 +534,9 @@ dette qu'ils n'ont pas contractée.
 - Écran de fin de partie avec le résultat (1-0 / 0-1 / ½-½)
 
 ### Phase 4 — Import / export (2-3 j)
-- Parser et écrire le PGN, charger une FEN
+- Parser le PGN (l'écriture du SAN est faite en phase 2), écrire le PGN,
+  charger une FEN
+- Import = `POST /games` avec `moves` (contrat §10), pas d'endpoint dédié
 - Coller un PGN ou charger un fichier
 - Rejouer le corpus de parties **depuis le PGN** cette fois (§4.2 bis) : le même
   test valide alors le parser en plus du moteur
@@ -524,6 +544,8 @@ dette qu'ils n'ont pas contractée.
 
 ### Phase 5 — IA (3-5 j)
 - Interface `Engine`, minimax alpha-bêta, niveaux (profondeur ou temps)
+- Branché sur `players` : le coup du moteur est calculé en tâche de fond et
+  poussé au client (contrat §4 bis)
 - Exécution hors du thread de requête pour ne pas bloquer l'API
 - Option Stockfish UCI derrière la même interface
 

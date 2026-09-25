@@ -57,6 +57,7 @@ class TestTheCorpusItself(unittest.TestCase):
         for game_data in GAMES:
             with self.subTest(game=game_data["id"]):
                 self.assertGreater(len(game_data["moves"]), 10)
+                self.assertEqual(len(game_data["san"]), len(game_data["moves"]))
                 self.assertTrue(game_data["final_fen"])
                 self.assertIn(game_data["final_status"], STATUS_BY_NAME)
 
@@ -91,6 +92,24 @@ class TestReplay(unittest.TestCase):
                     replay(game_data).current_position.to_fen(),
                     game_data["final_fen"],
                 )
+
+    def test_every_move_is_written_as_the_oracle_writes_it(self):
+        """Le SAN croisé avec celui de python-chess, coup par coup.
+
+        Le premier écart est signalé seul, avec sa position : sur une partie
+        de trois cents demi-coups, la liste entière ne dirait rien.
+        """
+        for game_data in GAMES:
+            with self.subTest(game=game_data["id"]):
+                game = replay(game_data)
+                for ply, (ours, oracle) in enumerate(zip(game.san(), game_data["san"])):
+                    if ours != oracle:
+                        self.fail(
+                            f"demi-coup {ply + 1} ({game_data['moves'][ply]}) : "
+                            f"{ours!r} au lieu de {oracle!r}\n"
+                            f"  position : {game.position_at(ply).to_fen()}"
+                        )
+                self.assertEqual(len(game.san()), len(game_data["san"]))
 
     def test_the_verdict_matches(self):
         for game_data in GAMES:

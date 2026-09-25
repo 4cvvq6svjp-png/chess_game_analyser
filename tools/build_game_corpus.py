@@ -7,9 +7,9 @@ prouve plus rien.
 
 Pourquoi ``python-chess`` : convertir les parties avec notre propre moteur
 serait circulaire. Un coup mal généré produirait des données fausses, que le
-moteur rejouerait sans broncher. L'oracle fournit donc la notation longue, la
-FEN finale et le verdict ; notre moteur n'intervient qu'à la vérification, et
-il doit retomber exactement dessus.
+moteur rejouerait sans broncher. L'oracle fournit donc la notation longue, le
+SAN, la FEN finale et le verdict ; notre moteur n'intervient qu'à la
+vérification, et il doit retomber exactement dessus.
 
     pip install chess
     python tools/build_game_corpus.py
@@ -75,7 +75,7 @@ def describe(game) -> dict | None:
     if board.fen() != chess.STARTING_FEN:
         return None  # les parties à handicap ne partent pas de la position initiale
 
-    moves, covers = [], set()
+    moves, sans, covers = [], [], set()
     # L'EPD est la position plus les droits et l'en passant : la clé de la
     # répétition. On compte les visites pour repérer les parties qui ont
     # franchi une triple répétition sans que personne ne réclame la nulle.
@@ -93,6 +93,7 @@ def describe(game) -> dict | None:
                 covers.add("promotion")
                 if move.promotion != chess.QUEEN:
                     covers.add("underpromotion")
+            sans.append(board.san(move))  # avant push : le SAN se lit sur la position de départ
             board.push(move)
             moves.append(move.uci())
             visits[board.epd()] += 1
@@ -125,6 +126,8 @@ def describe(game) -> dict | None:
         # le demi-coup où une position atteint sa troisième visite, s'il existe
         "repetition_ply": repetition_ply,
         "moves": moves,
+        # la notation de l'oracle, pour vérifier l'écriture du SAN de notre moteur
+        "san": sans,
         # en_passant="fen" : python-chess n'écrit la case que si la prise est
         # possible, la FEN standard l'écrit après tout bond. C'est notre
         # convention qu'on veut comparer.

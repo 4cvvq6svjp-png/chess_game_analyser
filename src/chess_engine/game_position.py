@@ -269,6 +269,72 @@ class GamePosition:
                 continue
             yield Move(plan.king_from, plan.king_to)
 
+    def san(self, move: Move, legal_moves: list[Move] | None = None) -> str:
+        """``move`` en notation algébrique standard : ``"Nf3"``, ``"exd6"``, ``"O-O"``.
+
+        Contrairement à la notation longue, le SAN ne se lit pas sur le coup
+        seul. Il faut la pièce qui part, les autres coups légaux -- pour ne
+        nommer la case de départ que si deux pièces semblables visent la même
+        arrivée -- et la position d'après, pour le ``+`` ou le ``#``. C'est
+        pourquoi il s'écrit ici, et pourquoi le front ne peut pas le calculer.
+
+        ``legal_moves`` évite de les régénérer quand l'appelant les a déjà.
+        """
+        legal = self.legal_moves() if legal_moves is None else legal_moves
+        if move not in legal:
+            raise ValueError(f"coup illégal dans cette position : {move}")
+        return self._san_body(move, legal) + self._san_suffix(move)
+
+    def _san_body(self, move: Move, legal: list[Move]) -> str:
+        piece = self.piece_at(move.square_from)
+        (row_from, col_from), (_, col_to) = move.square_from, move.square_to
+        target = square_name(move.square_to)
+
+        if piece.name == "king" and abs(col_to - col_from) == 2:
+            return "O-O" if col_to > col_from else "O-O-O"
+
+        if piece.name == "pawn":
+            # Un pion prend toujours en diagonale, prise en passant comprise :
+            # changer de colonne suffit à reconnaître la prise, et la colonne
+            # de départ suffit à la désambiguïser.
+            text = target
+            if col_to != col_from:
+                text = f"{square_name(move.square_from)[0]}x{target}"
+            if move.promotion is not None:
+                text += "=" + LETTERS_BY_NAME[move.promotion]
+            return text
+
+        rivals = [
+            other.square_from
+            for other in legal
+            if other.square_to == move.square_to
+            and other.square_from != move.square_from
+            and self.piece_at(other.square_from).name == piece.name
+        ]
+        origin = square_name(move.square_from)
+        if not rivals:
+            disambiguation = ""
+        elif all(col != col_from for _, col in rivals):
+            disambiguation = origin[0]
+        elif all(row != row_from for row, _ in rivals):
+            disambiguation = origin[1]
+        else:
+            disambiguation = origin
+
+        capture = "x" if self.piece_at(move.square_to) is not None else ""
+        return LETTERS_BY_NAME[piece.name] + disambiguation + capture + target
+
+    def _san_suffix(self, move: Move) -> str:
+        """``#`` pour un mat, ``+`` pour un échec, rien sinon.
+
+        Les coups légaux de la position d'après ne sont générés que si elle
+        est en échec : c'est le seul cas où leur absence signifie un mat.
+        """
+        after = self.apply(move)
+        if not after.is_in_check(after.side_to_move):
+            return ""
+        return "+" if after.legal_moves() else "#"
+
     def status(self, legal_moves: list[Move] | None = None) -> Status:
         """Le verdict que cette position permet de rendre, à elle seule.
 
