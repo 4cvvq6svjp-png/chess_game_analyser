@@ -9,7 +9,7 @@ pas de moteur (``docs/api-contract.md``, §5).
 import json
 import unittest
 
-from chess_engine import Game, Status, game_document
+from chess_engine import ChessError, Game, GameOver, IllegalMove, InvalidFen, Status, game_document
 
 FOOLS_MATE = ["f2f3", "e7e5", "g2g4", "d8h4"]
 SHUFFLE = ["g1f3", "g8f6", "f3g1", "f6g8"]
@@ -75,30 +75,30 @@ class TestAStoredGameIsRevalidated(unittest.TestCase):
     def test_an_illegal_move_is_refused(self):
         stored = game_after("e2e4").to_dict()
         stored["moves"].append("e2e4")  # plus de pion en e2
-        with self.assertRaises(ValueError):
+        with self.assertRaises(IllegalMove):
             Game.from_dict(stored)
 
     def test_a_move_after_mate_is_refused(self):
         stored = game_after(*FOOLS_MATE).to_dict()
         stored["moves"].append("a2a3")
-        with self.assertRaises(ValueError):
+        with self.assertRaises(GameOver):
             Game.from_dict(stored)
 
     def test_a_bad_fen_is_refused(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(InvalidFen):
             Game.from_dict({"initial_fen": "pas une fen", "moves": []})
 
     def test_an_ending_the_board_decides_cannot_be_recorded(self):
         """Un mat enregistré à la main contredirait l'échiquier."""
         stored = game_after("e2e4").to_dict()
         stored["termination"] = {"status": "checkmate", "by": "w", "at": 0.0}
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ChessError):
             Game.from_dict(stored)
 
     def test_an_unknown_status_is_refused(self):
         stored = game_after("e2e4").to_dict()
         stored["termination"] = {"status": "boredom", "by": "w", "at": 0.0}
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ChessError):
             Game.from_dict(stored)
 
 

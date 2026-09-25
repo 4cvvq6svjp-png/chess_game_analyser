@@ -14,6 +14,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 
+from .errors import ChessError, GameOver, IllegalMove, UnknownColor
 from .game_position import STARTING_FEN, GamePosition, Status
 from .move import Move
 
@@ -125,18 +126,26 @@ class Game:
         Une partie terminée n'accepte plus rien. Mat et pat arrêtent toujours,
         faute de coup à jouer ; les nulles de compteur et de répétition
         n'arrêtent que si ``auto_draw`` est vrai, ce qui est le cas par défaut.
+
+        Lève ``GameOver`` si la partie est terminée, ``IllegalMove`` si le coup
+        n'est pas jouable -- dans cet ordre (voir ``_refuse_if_over``).
         """
         position = self.current_position
-        return self._play(move, position, position.legal_moves())
+        legal = position.legal_moves()
+        self._refuse_if_over(position, legal)
+        if move not in legal:
+            raise IllegalMove(str(move))
+        return self._commit(move, position, legal)
 
     def play_text(self, text: str) -> GamePosition:
         """Joue un coup écrit en notation longue (« e2e4 », « e7e8q »)."""
         position = self.current_position
         legal = position.legal_moves()
+        self._refuse_if_over(position, legal)
         move = next((m for m in legal if str(m) == text), None)
         if move is None:
-            raise ValueError(f"coup illégal ou mal écrit : {text!r}")
-        return self._play(move, position, legal)
+            raise IllegalMove(text)
+        return self._commit(move, position, legal)
 
     def resign(self, color: str, at: float | None = None) -> Status:
         """Le camp ``color`` abandonne. Prend effet immédiatement.
@@ -148,9 +157,9 @@ class Game:
         main, et ``at`` marque l'instant où l'horloge s'arrête.
         """
         if color not in ("w", "b"):
-            raise ValueError(f"couleur inconnue : {color!r}")
+            raise UnknownColor(color)
         if self.is_over():
-            raise ValueError(f"la partie est déjà terminée : {self.status().value}")
+            raise GameOver(self.status())
         self.termination = Termination(
             Status.RESIGNATION, by=color, at=time.time() if at is None else at
         )
@@ -193,9 +202,12 @@ class Game:
             game.play_text(text)
         termination = data.get("termination")
         if termination is not None:
-            status = Status(termination["status"])
+            try:
+                status = Status(termination["status"])
+            except ValueError as error:
+                raise ChessError(f"statut inconnu : {termination['status']!r}") from error
             if status not in RECORDED_ENDINGS:
-                raise ValueError(f"fin qui ne s'enregistre pas : {status.value}")
+                raise ChessError(f"fin qui ne s'enregistre pas : {status.value}")
             game.termination = Termination(
                 status,
                 by=termination["by"],
@@ -212,18 +224,24 @@ class Game:
         status = self.status()
         return status.is_over() and (self.auto_draw or not status.is_draw())
 
-    def _play(self, move, position, legal):
-        """Le corps commun, qui ne génère les coups légaux qu'une fois.
+    def _refuse_if_over(self, position, legal):
+        """Lève ``GameOver`` si plus rien ne peut se jouer.
 
-        Les deviner, trancher le verdict et valider posent la même question à
-        la position ; y répondre trois fois coûtait trois fois le prix.
+        Posée *avant* de chercher le coup, et ce n'est pas un détail : après
+        un mat il n'existe plus aucun coup légal, et chercher d'abord
+        répondrait « coup illégal » là où la vraie raison est « partie
+        terminée ». Le client n'y réagit pas pareil (409 contre 422).
+
+        Les coups légaux sont passés par l'appelant : les deviner, trancher le
+        verdict et valider posent la même question à la position ; y répondre
+        trois fois coûtait trois fois le prix.
         """
         status = self._status_of(position, legal)
         if status.is_over() and (self.auto_draw or not status.is_draw()):
-            raise ValueError(f"la partie est terminée : {status.value}")
-        if move not in legal:
-            raise ValueError(f"coup illégal dans cette position : {move}")
+            raise GameOver(status)
 
+    def _commit(self, move, position, legal):
+        """Inscrit un coup déjà validé."""
         # Les coups légaux sont déjà là : le SAN ne coûte plus que son suffixe.
         # Si le cache a pris du retard, ``san()`` le rattrapera à la demande.
         if len(self._san) == len(self.moves):

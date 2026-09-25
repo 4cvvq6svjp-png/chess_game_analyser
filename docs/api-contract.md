@@ -28,30 +28,33 @@ séparé. C'est aussi ce que Stockfish parlera en phase 5.
 
 ---
 
-## 2. Prérequis dans le moteur : des exceptions typées
-
-`Game` lève aujourd'hui un `ValueError` nu pour cinq conditions distinctes :
-
-| Endroit | Condition |
-|---|---|
-| `play_text` | coup illégal ou mal écrit |
-| `_play` | coup illégal dans cette position |
-| `_play` | la partie est terminée |
-| `resign` | couleur inconnue |
-| `resign` | la partie est déjà terminée |
+## 2. Prérequis dans le moteur : des exceptions typées ✅
 
 L'API doit distinguer « ce coup n'est pas légal » (422) de « la partie est
 finie » (409) : réactions client différentes. Les séparer en lisant le texte
-français du message n'est pas un contrat, c'est un piège.
-
-À faire **avant** la couche web :
+français du message n'est pas un contrat, c'est un piège. `Game` levait un
+`ValueError` nu pour cinq conditions distinctes ; chaque raison a désormais
+son type (`chess_engine/errors.py`) :
 
 ```python
-class ChessError(Exception): ...
-class IllegalMove(ChessError): ...
-class GameOver(ChessError): ...
-class UnknownColor(ChessError): ...
+class ChessError(ValueError): ...                 # tous les refus du moteur
+class IllegalMove(ChessError):  move: str         # → 422 illegal_move
+class GameOver(ChessError):     status: Status    # → 409 game_over
+class UnknownColor(ChessError): color             # → 422
+class InvalidFen(ChessError):   fen, reason       # → 422 invalid_fen
 ```
+
+- **`ChessError` hérite de `ValueError`.** Chacun signale bien une valeur
+  refusée, et le code qui attrapait déjà `ValueError` — le terminal — continue
+  de marcher sans connaître ces types.
+- **`GameOver` passe avant `IllegalMove`.** Après un mat il n'existe plus aucun
+  coup légal : chercher le coup d'abord répondait « illégal » là où la raison
+  est « partie terminée ». `play` et `play_text` vérifient donc la fin de
+  partie en premier.
+- **`InvalidFen` couvre aussi ce qui échoue en dessous** du parseur — un
+  compteur qui n'est pas un nombre, une case d'en passant hors échiquier. C'est
+  ce qui permet à `POST /games` de répondre `invalid_fen` sans rien savoir des
+  détails de lecture.
 
 ### 2 bis. Et l'écriture du SAN
 
@@ -137,7 +140,7 @@ Tous les champs sont facultatifs. Par défaut : position initiale, nulles
 automatiques, deux humains, pas d'horloge (`time_control: null`).
 
 ```
-1. GamePosition.from_fen(initial_fen)   → ValueError = 422, rien n'est créé
+1. GamePosition.from_fen(initial_fen)   → InvalidFen = 422, rien n'est créé
 2. players, time_control valides        → sinon 422, rien n'est créé
 3. game = Game(initial_fen=…, auto_draw=…)
 4. id = secrets.token_urlsafe(8)

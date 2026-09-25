@@ -8,7 +8,7 @@ répétitions, la seule règle qu'aucune position ne peut trancher seule.
 import time
 import unittest
 
-from chess_engine import Game, GamePosition, Status
+from chess_engine import Game, GameOver, GamePosition, IllegalMove, Status, UnknownColor
 
 FOOLS_MATE = ["f2f3", "e7e5", "g2g4", "d8h4"]
 SCHOLARS_MATE = ["e2e4", "e7e5", "f1c4", "b8c6", "d1h5", "g8f6", "h5f7"]
@@ -44,21 +44,21 @@ class TestANewGame(unittest.TestCase):
 
 class TestRefusingMoves(unittest.TestCase):
     def test_an_illegal_move_is_refused(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(IllegalMove):
             game_after("e2e5")
 
     def test_nonsense_is_refused(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(IllegalMove):
             game_after("pouet")
 
     def test_nothing_can_be_played_after_a_mate(self):
         game = game_after(*FOOLS_MATE)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(GameOver):
             game.play_text("e1e2")
 
     def test_a_refused_move_leaves_the_history_untouched(self):
         game = game_after("e2e4")
-        with self.assertRaises(ValueError):
+        with self.assertRaises(IllegalMove):
             game.play_text("e4e6")
         self.assertEqual(game.ply, 1)
 
@@ -149,19 +149,19 @@ class TestDrawsByCounter(unittest.TestCase):
     def test_and_it_stops_the_game(self):
         """Choix assumé : la nulle est immédiate, pas une réclamation."""
         game = Game(initial_fen="4k3/8/8/8/8/8/4R3/4K3 w - - 100 80")
-        with self.assertRaises(ValueError):
+        with self.assertRaises(GameOver):
             game.play_text("e2e3")
         self.assertEqual(game.ply, 0)
 
     def test_a_repetition_stops_it_too(self):
         game = game_after(*SHUFFLE, *SHUFFLE)
         self.assertIs(game.status(), Status.REPETITION)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(GameOver):
             game.play_text("e2e4")
 
     def test_insufficient_material_stops_it_too(self):
         game = Game(initial_fen="4k3/8/8/8/8/8/8/4KB2 w - - 0 1")
-        with self.assertRaises(ValueError):
+        with self.assertRaises(GameOver):
             game.play_text("e1e2")
 
     def test_insufficient_material_ends_it(self):
@@ -197,7 +197,7 @@ class TestClaimableDraws(unittest.TestCase):
         for text in FOOLS_MATE:
             game.play_text(text)
         self.assertIs(game.status(), Status.CHECKMATE)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(GameOver):
             game.play_text("e1e2")
 
     def test_the_default_is_still_to_stop(self):
@@ -244,7 +244,7 @@ class TestResignation(unittest.TestCase):
     def test_nothing_can_be_played_afterwards(self):
         game = game_after("e2e4", "e7e5")
         game.resign("w")
-        with self.assertRaises(ValueError):
+        with self.assertRaises(GameOver):
             game.play_text("g1f3")
         self.assertEqual(game.ply, 2)
 
@@ -279,13 +279,13 @@ class TestResignation(unittest.TestCase):
     def test_resigning_twice_is_refused(self):
         game = game_after("e2e4")
         game.resign("w")
-        with self.assertRaises(ValueError):
+        with self.assertRaises(GameOver):
             game.resign("b")
         self.assertEqual(game.termination.by, "w")
 
     def test_a_finished_game_cannot_be_resigned(self):
         game = game_after(*FOOLS_MATE)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(GameOver):
             game.resign("w")
         self.assertIs(game.status(), Status.CHECKMATE)
 
@@ -293,7 +293,7 @@ class TestResignation(unittest.TestCase):
         game = game_after("e2e4")
         for colour in ["white", "W", "", None]:
             with self.subTest(colour=colour):
-                with self.assertRaises(ValueError):
+                with self.assertRaises(UnknownColor):
                     game.resign(colour)
         self.assertIsNone(game.termination)
 

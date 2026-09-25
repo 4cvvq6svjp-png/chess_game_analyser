@@ -24,6 +24,7 @@ Modules du package `chess_engine` (`src/chess_engine/`, installé en editable).
 | `game_position.py` | `GamePosition` : les six champs d'une FEN, immuable. `legal_moves`, `apply`, `to_fen`/`from_fen`, `status`, `repetition_key`, `san` |
 | `game.py` | `Game` : FEN initiale + liste de coups. Historique, rembobinage, répétition triple, résultat |
 | `move.py` | `Move` : d'où, vers où, promotion. Notation longue |
+| `errors.py` | Les refus typés : `ChessError` et ses quatre sous-types (ajouté en phase 2.0) |
 | `document.py` | `game_document` : le document de partie servi par l'API (ajouté en phase 2.1) |
 | `pieces.py` | `Piece` (ABC) : `pseudo_moves` abstraite, plus les deux marcheurs partagés |
 | `pawn/knight/bishop/rook/queen/king.py` | une classe par pièce : sa géométrie, et rien d'autre |
@@ -445,7 +446,7 @@ Découpée pour que ce qui est testable sans infrastructure le soit d'abord, et
 que les deux morceaux réellement délicats — la persistance et le temps réel —
 arrivent en dernier, quand le reste est acquis.
 
-**2.0 — Les fins de partie qui ne sont pas des règles** ✅ *partiellement fait*
+**2.0 — Les fins de partie qui ne sont pas des règles** ✅ *terminée, hors nulle proposée*
 
 L'**abandon** est en place : `Game.termination` enregistre la raison, le camp et
 l'instant, et `status()` le consulte avant d'interroger la position — la partie
@@ -453,8 +454,9 @@ est donc terminée dès que `resign()` rend la main, sans attendre qu'un coup so
 tenté. `Status` a gagné `RESIGNATION`, comme il portait déjà `REPETITION` que la
 position ne produit jamais.
 
-Reste : les **exceptions typées**, prérequis de la couche web — voir §2 du
-contrat. La **proposition de nulle** est **reportée** après la phase 2 (voir §9
+Les **exceptions typées** sont en place (`errors.py`, contrat §2) : `GameOver`,
+`IllegalMove`, `UnknownColor`, `InvalidFen`, toutes sous `ChessError`, elle-même
+un `ValueError`. La **proposition de nulle** est **reportée** après la phase 2 (voir §9
 du contrat) ; il lui faudra un état intermédiaire « w a proposé, b n'a pas
 répondu ».
 

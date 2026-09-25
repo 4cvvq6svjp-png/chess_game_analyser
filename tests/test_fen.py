@@ -9,6 +9,7 @@ future détection de répétition.
 
 import unittest
 
+from chess_engine import InvalidFen
 from helpers import GamePosition, position_with, square
 
 STARTPOS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -115,31 +116,31 @@ class TestRoundTrip(unittest.TestCase):
 
 class TestRejectsNonsense(unittest.TestCase):
     def test_too_few_fields(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(InvalidFen):
             GamePosition.from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w")
 
     def test_wrong_number_of_ranks(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(InvalidFen):
             GamePosition.from_fen("8/8/8/8/8/8/8 w - - 0 1")
 
     def test_a_rank_that_does_not_add_up(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(InvalidFen):
             GamePosition.from_fen("8/8/8/8/8/8/8/KKK w - - 0 1")
 
     def test_an_unknown_piece(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(InvalidFen):
             GamePosition.from_fen("8/8/8/8/8/8/8/X7 w - - 0 1")
 
     def test_an_invalid_side_to_move(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(InvalidFen):
             GamePosition.from_fen("8/8/8/8/8/8/8/K6k x - - 0 1")
 
     def test_invalid_castling_rights(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(InvalidFen):
             GamePosition.from_fen("8/8/8/8/8/8/8/K6k w KQxq - 0 1")
 
     def test_an_impossible_en_passant_square(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(InvalidFen):
             GamePosition.from_fen("8/8/8/8/8/8/8/K6k w - z9 0 1")
 
 

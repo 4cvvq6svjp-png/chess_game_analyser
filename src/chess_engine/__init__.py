@@ -13,6 +13,7 @@ et une suite de coups, dont tout le reste se déduit.
 
 from .bishop import Bishop
 from .document import game_document
+from .errors import ChessError, GameOver, IllegalMove, InvalidFen, UnknownColor
 from .game import Game, Termination
 from .game_position import GamePosition, Status
 from .king import King
@@ -26,6 +27,11 @@ from .rook import Rook
 
 __all__ = [
     "Bishop",
+    "ChessError",
+    "GameOver",
+    "IllegalMove",
+    "InvalidFen",
+    "UnknownColor",
     "Game",
     "Termination",
     "GamePosition",
