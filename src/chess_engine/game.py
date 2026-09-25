@@ -20,6 +20,10 @@ from .move import Move
 #: Le nombre d'apparitions d'une même position qui rend la partie nulle.
 REPETITION_LIMIT = 3
 
+#: Les fins qu'un ``Termination`` peut porter : celles qu'aucune position ne
+#: produit. Un mat enregistré à la main contredirait l'échiquier.
+RECORDED_ENDINGS = frozenset({Status.RESIGNATION})
+
 
 @dataclass(frozen=True)
 class Termination:
@@ -61,12 +65,14 @@ class Game:
     def __post_init__(self):
         self._positions: list[GamePosition] = []
         self._keys: list[str] = []
+        self._san: list[str] = []
         self._rebuild()
 
     def _rebuild(self):
         position = GamePosition.from_fen(self.initial_fen)
         self._positions = [position]
         self._keys = [position.repetition_key()]
+        self._san = []
         for move in self.moves:
             position = position.apply(move)
             self._positions.append(position)
@@ -81,6 +87,21 @@ class Game:
         if len(self._positions) != len(self.moves) + 1:
             self._rebuild()
         return self._positions
+
+    def san(self) -> list[str]:
+        """Les coups joués en notation algébrique standard, dans l'ordre.
+
+        Parallèle à ``moves`` : ``san()[i]`` est l'écriture humaine de
+        ``moves[i]``. Écrit au moment où ``play`` joue le coup, qui a déjà les
+        coups légaux en main -- il ne reste que le ``+`` ou le ``#`` à
+        trancher. Les coups ajoutés à ``moves`` par un autre chemin sont
+        rattrapés ici, à la demande, au prix d'une génération par coup.
+        """
+        positions = self.positions()
+        while len(self._san) < len(self.moves):
+            ply = len(self._san)
+            self._san.append(positions[ply].san(self.moves[ply]))
+        return self._san
 
     def position_at(self, ply: int) -> GamePosition:
         """La position après ``ply`` demi-coups. ``ply=0`` est la position de départ."""
@@ -135,6 +156,53 @@ class Game:
         )
         return self.termination.status
 
+    def to_dict(self) -> dict:
+        """La partie sous sa forme durable, sérialisable en JSON tel quel.
+
+        Seulement ce qui ne se déduit pas : la position de départ, les coups,
+        la politique de nulle et une éventuelle fin enregistrée. Les positions,
+        le SAN et le verdict se recalculent -- les stocker, ce serait stocker
+        de quoi se contredire.
+        """
+        termination = self.termination
+        return {
+            "initial_fen": self.initial_fen,
+            "moves": [str(move) for move in self.moves],
+            "auto_draw": self.auto_draw,
+            "termination": None if termination is None else {
+                "status": termination.status.value,
+                "by": termination.by,
+                "at": termination.at,
+            },
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> Game:
+        """Reconstruit une partie depuis ``to_dict``, en **rejouant** chaque coup.
+
+        Rejouer plutôt que recopier la liste, c'est revalider toute la partie :
+        un enregistrement corrompu échoue ici, bruyamment, au lieu de servir
+        une position impossible. La fin enregistrée est posée en dernier --
+        avant, elle interdirait de rejouer les coups qui la précèdent.
+        """
+        game = cls(
+            initial_fen=data.get("initial_fen", STARTING_FEN),
+            auto_draw=data.get("auto_draw", True),
+        )
+        for text in data.get("moves", []):
+            game.play_text(text)
+        termination = data.get("termination")
+        if termination is not None:
+            status = Status(termination["status"])
+            if status not in RECORDED_ENDINGS:
+                raise ValueError(f"fin qui ne s'enregistre pas : {status.value}")
+            game.termination = Termination(
+                status,
+                by=termination["by"],
+                at=termination["at"],
+            )
+        return game
+
     def is_over(self) -> bool:
         """Plus rien ne peut se jouer ici.
 
@@ -156,6 +224,10 @@ class Game:
         if move not in legal:
             raise ValueError(f"coup illégal dans cette position : {move}")
 
+        # Les coups légaux sont déjà là : le SAN ne coûte plus que son suffixe.
+        # Si le cache a pris du retard, ``san()`` le rattrapera à la demande.
+        if len(self._san) == len(self.moves):
+            self._san.append(position.san(move, legal))
         self.moves.append(move)
         self._positions.append(position.apply(move))
         self._keys.append(self._positions[-1].repetition_key())

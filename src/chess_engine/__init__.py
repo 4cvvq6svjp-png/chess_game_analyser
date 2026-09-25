@@ -12,6 +12,7 @@ et une suite de coups, dont tout le reste se déduit.
 """
 
 from .bishop import Bishop
+from .document import game_document
 from .game import Game, Termination
 from .game_position import GamePosition, Status
 from .king import King
@@ -37,6 +38,7 @@ __all__ = [
     "Queen",
     "Rook",
     "Status",
+    "game_document",
     "square_from_name",
     "square_name",
 ]

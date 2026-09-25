@@ -21,9 +21,10 @@ Modules du package `chess_engine` (`src/chess_engine/`, installé en editable).
 
 | Module | Rôle |
 |---|---|
-| `game_position.py` | `GamePosition` : les six champs d'une FEN, immuable. `legal_moves`, `apply`, `to_fen`/`from_fen`, `status`, `repetition_key` |
+| `game_position.py` | `GamePosition` : les six champs d'une FEN, immuable. `legal_moves`, `apply`, `to_fen`/`from_fen`, `status`, `repetition_key`, `san` |
 | `game.py` | `Game` : FEN initiale + liste de coups. Historique, rembobinage, répétition triple, résultat |
 | `move.py` | `Move` : d'où, vers où, promotion. Notation longue |
+| `document.py` | `game_document` : le document de partie servi par l'API (ajouté en phase 2.1) |
 | `pieces.py` | `Piece` (ABC) : `pseudo_moves` abstraite, plus les deux marcheurs partagés |
 | `pawn/knight/bishop/rook/queen/king.py` | une classe par pièce : sa géométrie, et rien d'autre |
 | `move_utility.py` | `check_diags/lines/knights` : les cases attaquées, par rayons |
@@ -472,7 +473,7 @@ n'a alors plus qu'à l'exposer.
 
 </details>
 
-**2.1 — Le format de transport** *(pur Python, aucun serveur)*
+**2.1 — Le format de transport** ✅ *terminée* *(pur Python, aucun serveur)*
 
 `Game` est déjà exactement ce qu'il faut envoyer : une FEN initiale et une
 liste de coups. `Status` hérite de `str`, donc sérialisable tel quel.
@@ -483,6 +484,15 @@ L'**écriture du SAN** (`GamePosition.san(move)`) arrive ici, et non en phase 4 
 le document de partie sert la liste des coups en SAN, que le front de la
 phase 3 ne peut pas calculer seul (contrat §2 bis). Seul le parser reste en
 phase 4.
+
+Fait : `Game.to_dict()` / `Game.from_dict()` pour la forme durable —
+`from_dict` rejoue chaque coup, donc revalide la partie — et
+`chess_engine.game_document()` pour le document du contrat §5, sans les champs
+d'application (id, joueurs, cadence, horloge) que l'API ajoutera. Le SAN est
+écrit par `_play`, qui a déjà les coups légaux en main : rejouer la plus
+longue partie du corpus passe de ~170 à ~180 ms, et `san()` ne coûte ensuite
+plus rien. Le corpus porte désormais le SAN de `python-chess`, croisé coup par
+coup avec le nôtre.
 
 **2.2 — Les endpoints, en mémoire**
 
