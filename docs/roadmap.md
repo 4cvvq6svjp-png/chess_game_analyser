@@ -437,11 +437,26 @@ différentiel sur positions aléatoires reste à faire — voir §6.
 
 ### Phase 2 — API (2-3 j)
 
+> La forme est fixée : voir **[api-contract.md](./api-contract.md)** —
+> endpoints, document de partie, identifiants, concurrence, erreurs, stockage.
+
 Découpée pour que ce qui est testable sans infrastructure le soit d'abord, et
 que les deux morceaux réellement délicats — la persistance et le temps réel —
 arrivent en dernier, quand le reste est acquis.
 
-**2.0 — Les fins de partie qui ne sont pas des règles** *(moteur, pas web)*
+**2.0 — Les fins de partie qui ne sont pas des règles** ✅ *partiellement fait*
+
+L'**abandon** est en place : `Game.termination` enregistre la raison, le camp et
+l'instant, et `status()` le consulte avant d'interroger la position — la partie
+est donc terminée dès que `resign()` rend la main, sans attendre qu'un coup soit
+tenté. `Status` a gagné `RESIGNATION`, comme il portait déjà `REPETITION` que la
+position ne produit jamais.
+
+Restent : la **proposition de nulle** (il lui faut un état intermédiaire « w a
+proposé, b n'a pas répondu ») et les **exceptions typées**, prérequis de la
+couche web — voir §2 du contrat.
+
+<details><summary>Le raisonnement d'origine</summary>
 
 `status()` ne connaît que ce que l'échiquier décide. Or une partie se termine
 aussi par **abandon** et par **nulle acceptée**, qui sont des événements, pas
@@ -453,6 +468,8 @@ signalait déjà comme l'ajout au meilleur rapport valeur/effort.
 `Status`. Probablement un champ `termination` explicite que `status()` et
 `result()` consultent en premier. C'est petit, c'est du moteur pur, et l'API
 n'a alors plus qu'à l'exposer.
+
+</details>
 
 **2.1 — Le format de transport** *(pur Python, aucun serveur)*
 
