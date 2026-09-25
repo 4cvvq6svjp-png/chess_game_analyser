@@ -31,6 +31,7 @@ Modules du package `chess_engine` (`src/chess_engine/`, installé en editable).
 | `move_utility.py` | `check_diags/lines/knights` : les cases attaquées, par rayons |
 | `perft.py` | `perft` et `perft_divide` : la preuve que les règles sont justes |
 | `cli.py` | l'adaptateur terminal. Aucune règle |
+| `chess_api/` | *(paquet séparé, extra `[api]`)* l'API HTTP : `app.py` (FastAPI), `store.py` (`GameRecord`, `GameStore`) |
 
 Convention de coordonnées : `board[row][col]`, `row 0` = rang 8, `col 0` = colonne a.
 
@@ -496,7 +497,7 @@ longue partie du corpus passe de ~170 à ~180 ms, et `san()` ne coûte ensuite
 plus rien. Le corpus porte désormais le SAN de `python-chess`, croisé coup par
 coup avec le nôtre.
 
-**2.2 — Les endpoints, en mémoire**
+**2.2 — Les endpoints, en mémoire** ✅ *terminée*
 
 `POST /games`, `GET /games/{id}`, `POST /games/{id}/moves`, `/resign`
 (`/legal-moves` écarté, `/draw-offer` reporté — voir le contrat). La création
@@ -504,6 +505,13 @@ accepte déjà `players` et `time_control` (contrat §4), même si l'IA et
 l'horloge n'existent pas encore. Stockage dans
 un dictionnaire, tests via `TestClient`. Aucune base : ce qu'on valide ici,
 c'est la forme de l'API, pas sa durabilité.
+
+Fait : paquet `chess_api` à côté de `chess_engine`, installé par l'extra
+`[api]` — un test vérifie qu'`import chess_engine` ne charge ni FastAPI ni
+Pydantic. `GameRecord` + `InMemoryGameStore` derrière le protocole `GameStore`,
+un verrou par partie pour que la garde `expected_ply` tienne sous requêtes
+simultanées, et un code `error` sur tous les refus, y compris les corps mal
+formés. Lancer : `uvicorn chess_api.app:app --reload`.
 
 Un point de conception à ne pas remettre à plus tard : **la concurrence**. Deux
 joueurs peuvent poster un coup en même temps. Un `expected_ply` dans la requête

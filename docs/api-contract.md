@@ -1,6 +1,6 @@
 # Contrat d'API — phase 2
 
-**Statut : conçu, pas encore implémenté.** Ce document fixe la forme avant
+**Statut : implémenté en mémoire (tranche 2.2, paquet `chess_api`) ; SQLite (2.3) et horloge (2.4) à venir.** Ce document fixe la forme avant
 d'écrire la moindre ligne de FastAPI. Il complète le [roadmap](./roadmap.md),
 dont la §5 découpe la phase 2 en cinq tranches.
 
@@ -208,7 +208,7 @@ inconditionnel — c'est le coup qui a besoin d'un garde-fou de concurrence.
 1. store.get(id)                        → 404
 2. game.resign(color)
      GameOver                           → 409
-     UnknownColor                       → 422
+     UnknownColor                       → 422 unknown_color
 3. store.save(id, game)
 4. 200 + le document
 ```
@@ -362,6 +362,12 @@ ferait le même travail en moins lisible.
 Effet secondaire utile : rejouer la même requête échoue naturellement, puisque
 le ply a avancé. Pas de double-coup possible.
 
+**La garde n'est vraie que si « vérifier puis jouer » est atomique.** FastAPI
+exécute les endpoints synchrones dans un pool de threads : deux coups postés
+au même instant liraient le même `ply` et passeraient tous deux. Chaque
+`GameRecord` porte donc un verrou, pris autour de la vérification *et* du coup.
+Un test poste huit coups simultanés au même `expected_ply` : un seul passe.
+
 ---
 
 ## 7. Les erreurs rendent l'état
@@ -371,13 +377,19 @@ le ply a avancé. Pas de double-coup possible.
 422 {"error": "illegal_move", "move": "e2e5", "game": {...}}
 409 {"error": "game_over", "status": "resignation", "game": {...}}
 409 {"error": "not_your_turn", "side_to_move": "b", "game": {...}}
-422 {"error": "invalid_fen", "initial_fen": "..."}
+422 {"error": "unknown_color", "color": "white", "game": {...}}
+404 {"error": "game_not_found", "id": "..."}
+422 {"error": "invalid_request", "detail": [...]}
+422 {"error": "invalid_fen", "initial_fen": "...", "reason": "..."}
 422 {"error": "unsupported_player", "color": "b"}
 422 {"error": "invalid_time_control"}
 ```
 
 Les trois derniers refusent une **création** : il n'y a pas encore de partie,
-donc pas de `game` à rendre.
+donc pas de `game` à rendre. Pas plus pour `game_not_found`, ni pour
+`invalid_request` — un corps mal formé (champ manquant, mauvais type), que
+FastAPI refuserait sinon dans son propre format : le remplacer donne à *tous*
+les refus la même forme, un `error` lisible par la machine.
 
 Le `game` complet dans **chaque** rejet : le client se resynchronise sans second
 appel, ce qui est exactement ce dont il a besoin au moment où il vient de se
