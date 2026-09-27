@@ -18,6 +18,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, NamedTuple
 
 from .bishop import Bishop
+from .errors import IllegalMove, InvalidFen
 from .king import King
 from .knight import Knight
 from .move import Move, square_from_name, square_name
@@ -282,7 +283,7 @@ class GamePosition:
         """
         legal = self.legal_moves() if legal_moves is None else legal_moves
         if move not in legal:
-            raise ValueError(f"coup illégal dans cette position : {move}")
+            raise IllegalMove(str(move))
         return self._san_body(move, legal) + self._san_suffix(move)
 
     def _san_body(self, move: Move, legal: list[Move]) -> str:
@@ -545,10 +546,24 @@ class GamePosition:
         Les deux compteurs finaux sont facultatifs : beaucoup de positions de
         test publiées s'arrêtent après la case d'en passant. Ils valent alors
         0 et 1, ce qui ne change rien au calcul des coups.
+
+        Tout refus est un ``InvalidFen``, y compris ceux qui viennent d'en
+        dessous -- une case d'en passant hors échiquier, un compteur qui n'est
+        pas un nombre : l'appelant n'a pas à connaître les détails de lecture
+        pour savoir que c'est la FEN qui est en cause.
         """
+        try:
+            return cls._parse_fen(fen)
+        except InvalidFen:
+            raise
+        except (ValueError, AttributeError) as error:
+            raise InvalidFen(fen, str(error)) from error
+
+    @classmethod
+    def _parse_fen(cls, fen: str) -> GamePosition:
         fields = fen.split()
         if len(fields) < 4:
-            raise ValueError(f"FEN incomplète, 4 champs au minimum : {fen!r}")
+            raise ValueError("4 champs au minimum")
 
         placement, side_to_move, castling, en_passant = fields[:4]
         if side_to_move not in ("w", "b"):

@@ -24,12 +24,14 @@ Modules du package `chess_engine` (`src/chess_engine/`, installé en editable).
 | `game_position.py` | `GamePosition` : les six champs d'une FEN, immuable. `legal_moves`, `apply`, `to_fen`/`from_fen`, `status`, `repetition_key`, `san` |
 | `game.py` | `Game` : FEN initiale + liste de coups. Historique, rembobinage, répétition triple, résultat |
 | `move.py` | `Move` : d'où, vers où, promotion. Notation longue |
+| `errors.py` | Les refus typés : `ChessError` et ses quatre sous-types (ajouté en phase 2.0) |
 | `document.py` | `game_document` : le document de partie servi par l'API (ajouté en phase 2.1) |
 | `pieces.py` | `Piece` (ABC) : `pseudo_moves` abstraite, plus les deux marcheurs partagés |
 | `pawn/knight/bishop/rook/queen/king.py` | une classe par pièce : sa géométrie, et rien d'autre |
 | `move_utility.py` | `check_diags/lines/knights` : les cases attaquées, par rayons |
 | `perft.py` | `perft` et `perft_divide` : la preuve que les règles sont justes |
 | `cli.py` | l'adaptateur terminal. Aucune règle |
+| `chess_api/` | *(paquet séparé, extra `[api]`)* l'API HTTP : `app.py` (FastAPI), `store.py` (`GameRecord`, `GameStore`) |
 
 Convention de coordonnées : `board[row][col]`, `row 0` = rang 8, `col 0` = colonne a.
 
@@ -445,7 +447,7 @@ Découpée pour que ce qui est testable sans infrastructure le soit d'abord, et
 que les deux morceaux réellement délicats — la persistance et le temps réel —
 arrivent en dernier, quand le reste est acquis.
 
-**2.0 — Les fins de partie qui ne sont pas des règles** ✅ *partiellement fait*
+**2.0 — Les fins de partie qui ne sont pas des règles** ✅ *terminée, hors nulle proposée*
 
 L'**abandon** est en place : `Game.termination` enregistre la raison, le camp et
 l'instant, et `status()` le consulte avant d'interroger la position — la partie
@@ -453,8 +455,9 @@ est donc terminée dès que `resign()` rend la main, sans attendre qu'un coup so
 tenté. `Status` a gagné `RESIGNATION`, comme il portait déjà `REPETITION` que la
 position ne produit jamais.
 
-Reste : les **exceptions typées**, prérequis de la couche web — voir §2 du
-contrat. La **proposition de nulle** est **reportée** après la phase 2 (voir §9
+Les **exceptions typées** sont en place (`errors.py`, contrat §2) : `GameOver`,
+`IllegalMove`, `UnknownColor`, `InvalidFen`, toutes sous `ChessError`, elle-même
+un `ValueError`. La **proposition de nulle** est **reportée** après la phase 2 (voir §9
 du contrat) ; il lui faudra un état intermédiaire « w a proposé, b n'a pas
 répondu ».
 
@@ -494,7 +497,7 @@ longue partie du corpus passe de ~170 à ~180 ms, et `san()` ne coûte ensuite
 plus rien. Le corpus porte désormais le SAN de `python-chess`, croisé coup par
 coup avec le nôtre.
 
-**2.2 — Les endpoints, en mémoire**
+**2.2 — Les endpoints, en mémoire** ✅ *terminée*
 
 `POST /games`, `GET /games/{id}`, `POST /games/{id}/moves`, `/resign`
 (`/legal-moves` écarté, `/draw-offer` reporté — voir le contrat). La création
@@ -502,6 +505,13 @@ accepte déjà `players` et `time_control` (contrat §4), même si l'IA et
 l'horloge n'existent pas encore. Stockage dans
 un dictionnaire, tests via `TestClient`. Aucune base : ce qu'on valide ici,
 c'est la forme de l'API, pas sa durabilité.
+
+Fait : paquet `chess_api` à côté de `chess_engine`, installé par l'extra
+`[api]` — un test vérifie qu'`import chess_engine` ne charge ni FastAPI ni
+Pydantic. `GameRecord` + `InMemoryGameStore` derrière le protocole `GameStore`,
+un verrou par partie pour que la garde `expected_ply` tienne sous requêtes
+simultanées, et un code `error` sur tous les refus, y compris les corps mal
+formés. Lancer : `uvicorn chess_api.app:app --reload`.
 
 Un point de conception à ne pas remettre à plus tard : **la concurrence**. Deux
 joueurs peuvent poster un coup en même temps. Un `expected_ply` dans la requête

@@ -14,6 +14,14 @@ dependencies = []
 [project.optional-dependencies]
 dev = [
     "ruff>=0.5",
+    # le client de test de FastAPI (TestClient) en a besoin ; Starlette
+    # déprécie httpx à son profit
+    "httpx2>=2.0",
+]
+# L'API HTTP (paquet chess_api). Le moteur, lui, reste sans dépendance.
+api = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
 ]
 
 [project.scripts]

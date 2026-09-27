@@ -7,7 +7,7 @@ ici, on isole les cas qu'une partie réelle ne garantit pas de traverser.
 
 import unittest
 
-from chess_engine import Game
+from chess_engine import Game, IllegalMove
 from helpers import GamePosition
 
 STARTPOS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -89,7 +89,7 @@ class TestRefusal(unittest.TestCase):
     def test_an_illegal_move_has_no_notation(self):
         position = GamePosition.from_fen(STARTPOS)
         illegal = GamePosition.from_fen("4k3/8/8/8/8/8/8/R3K3 w - - 0 1").legal_moves()[0]
-        with self.assertRaises(ValueError):
+        with self.assertRaises(IllegalMove):
             position.san(illegal)
 
 

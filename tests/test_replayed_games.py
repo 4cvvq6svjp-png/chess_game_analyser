@@ -19,6 +19,7 @@ import json
 import pathlib
 import unittest
 
+from chess_engine import GameOver
 from helpers import Game, Status
 
 CORPUS = json.loads(
@@ -224,7 +225,7 @@ class TestTheRulesAreActuallyExercised(unittest.TestCase):
             strict.play_text(text)
         self.assertEqual(strict.repetition_count(), 3)
         self.assertIs(strict.status(), Status.REPETITION)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(GameOver):
             strict.play_text(game_data["moves"][ply])
 
 

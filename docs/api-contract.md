@@ -1,6 +1,6 @@
 # Contrat d'API — phase 2
 
-**Statut : conçu, pas encore implémenté.** Ce document fixe la forme avant
+**Statut : implémenté en mémoire (tranche 2.2, paquet `chess_api`) ; SQLite (2.3) et horloge (2.4) à venir.** Ce document fixe la forme avant
 d'écrire la moindre ligne de FastAPI. Il complète le [roadmap](./roadmap.md),
 dont la §5 découpe la phase 2 en cinq tranches.
 
@@ -28,30 +28,33 @@ séparé. C'est aussi ce que Stockfish parlera en phase 5.
 
 ---
 
-## 2. Prérequis dans le moteur : des exceptions typées
-
-`Game` lève aujourd'hui un `ValueError` nu pour cinq conditions distinctes :
-
-| Endroit | Condition |
-|---|---|
-| `play_text` | coup illégal ou mal écrit |
-| `_play` | coup illégal dans cette position |
-| `_play` | la partie est terminée |
-| `resign` | couleur inconnue |
-| `resign` | la partie est déjà terminée |
+## 2. Prérequis dans le moteur : des exceptions typées ✅
 
 L'API doit distinguer « ce coup n'est pas légal » (422) de « la partie est
 finie » (409) : réactions client différentes. Les séparer en lisant le texte
-français du message n'est pas un contrat, c'est un piège.
-
-À faire **avant** la couche web :
+français du message n'est pas un contrat, c'est un piège. `Game` levait un
+`ValueError` nu pour cinq conditions distinctes ; chaque raison a désormais
+son type (`chess_engine/errors.py`) :
 
 ```python
-class ChessError(Exception): ...
-class IllegalMove(ChessError): ...
-class GameOver(ChessError): ...
-class UnknownColor(ChessError): ...
+class ChessError(ValueError): ...                 # tous les refus du moteur
+class IllegalMove(ChessError):  move: str         # → 422 illegal_move
+class GameOver(ChessError):     status: Status    # → 409 game_over
+class UnknownColor(ChessError): color             # → 422
+class InvalidFen(ChessError):   fen, reason       # → 422 invalid_fen
 ```
+
+- **`ChessError` hérite de `ValueError`.** Chacun signale bien une valeur
+  refusée, et le code qui attrapait déjà `ValueError` — le terminal — continue
+  de marcher sans connaître ces types.
+- **`GameOver` passe avant `IllegalMove`.** Après un mat il n'existe plus aucun
+  coup légal : chercher le coup d'abord répondait « illégal » là où la raison
+  est « partie terminée ». `play` et `play_text` vérifient donc la fin de
+  partie en premier.
+- **`InvalidFen` couvre aussi ce qui échoue en dessous** du parseur — un
+  compteur qui n'est pas un nombre, une case d'en passant hors échiquier. C'est
+  ce qui permet à `POST /games` de répondre `invalid_fen` sans rien savoir des
+  détails de lecture.
 
 ### 2 bis. Et l'écriture du SAN
 
@@ -137,7 +140,7 @@ Tous les champs sont facultatifs. Par défaut : position initiale, nulles
 automatiques, deux humains, pas d'horloge (`time_control: null`).
 
 ```
-1. GamePosition.from_fen(initial_fen)   → ValueError = 422, rien n'est créé
+1. GamePosition.from_fen(initial_fen)   → InvalidFen = 422, rien n'est créé
 2. players, time_control valides        → sinon 422, rien n'est créé
 3. game = Game(initial_fen=…, auto_draw=…)
 4. id = secrets.token_urlsafe(8)
@@ -205,7 +208,7 @@ inconditionnel — c'est le coup qui a besoin d'un garde-fou de concurrence.
 1. store.get(id)                        → 404
 2. game.resign(color)
      GameOver                           → 409
-     UnknownColor                       → 422
+     UnknownColor                       → 422 unknown_color
 3. store.save(id, game)
 4. 200 + le document
 ```
@@ -359,6 +362,12 @@ ferait le même travail en moins lisible.
 Effet secondaire utile : rejouer la même requête échoue naturellement, puisque
 le ply a avancé. Pas de double-coup possible.
 
+**La garde n'est vraie que si « vérifier puis jouer » est atomique.** FastAPI
+exécute les endpoints synchrones dans un pool de threads : deux coups postés
+au même instant liraient le même `ply` et passeraient tous deux. Chaque
+`GameRecord` porte donc un verrou, pris autour de la vérification *et* du coup.
+Un test poste huit coups simultanés au même `expected_ply` : un seul passe.
+
 ---
 
 ## 7. Les erreurs rendent l'état
@@ -368,13 +377,19 @@ le ply a avancé. Pas de double-coup possible.
 422 {"error": "illegal_move", "move": "e2e5", "game": {...}}
 409 {"error": "game_over", "status": "resignation", "game": {...}}
 409 {"error": "not_your_turn", "side_to_move": "b", "game": {...}}
-422 {"error": "invalid_fen", "initial_fen": "..."}
+422 {"error": "unknown_color", "color": "white", "game": {...}}
+404 {"error": "game_not_found", "id": "..."}
+422 {"error": "invalid_request", "detail": [...]}
+422 {"error": "invalid_fen", "initial_fen": "...", "reason": "..."}
 422 {"error": "unsupported_player", "color": "b"}
 422 {"error": "invalid_time_control"}
 ```
 
 Les trois derniers refusent une **création** : il n'y a pas encore de partie,
-donc pas de `game` à rendre.
+donc pas de `game` à rendre. Pas plus pour `game_not_found`, ni pour
+`invalid_request` — un corps mal formé (champ manquant, mauvais type), que
+FastAPI refuserait sinon dans son propre format : le remplacer donne à *tous*
+les refus la même forme, un `error` lisible par la machine.
 
 Le `game` complet dans **chaque** rejet : le client se resynchronise sans second
 appel, ce qui est exactement ce dont il a besoin au moment où il vient de se
